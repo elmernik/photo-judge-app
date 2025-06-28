@@ -4,4 +4,4 @@ package-lock.json
 uploaded_photos
 judgements.db
 .DS_Store
-__pycache__
+__pycache__/
