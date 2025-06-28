@@ -48,7 +48,7 @@ class Criterion(CriterionBase):
 class CompetitionBase(BaseModel):
     name: str
     description: Optional[str] = None
-    rules: Optional[Dict[str, Any]] = None
+    rules: Optional[str] = None
 
 class CompetitionCreate(CompetitionBase):
     pass

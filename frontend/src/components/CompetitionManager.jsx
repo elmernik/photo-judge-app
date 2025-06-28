@@ -12,31 +12,31 @@ const CompetitionManager = ({ competitions, setCompetitions, closeModal, API_BAS
     };
 
     const handleSave = async (e) => {
-        e.preventDefault();
-        setError(null);
-        try {
-            const competitionData = { ...editingCompetition, rules };
+    e.preventDefault();
+    setError(null);
+    try {
+        const competitionData = { ...editingCompetition };
 
-            const res = editingCompetition.id
-                ? await api.update(editingCompetition.id, competitionData)
-                : await api.create(competitionData);
+        const res = editingCompetition.id
+            ? await api.update(editingCompetition.id, competitionData)
+            : await api.create(competitionData);
 
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.detail || "Failed to save competition.");
-            }
-
-            const savedCompetition = await res.json();
-            if (editingCompetition.id) {
-                setCompetitions(competitions.map(c => c.id === savedCompetition.id ? savedCompetition : c));
-            } else {
-                setCompetitions([...competitions, savedCompetition]);
-            }
-            setEditingCompetition(null);
-        } catch(e) {
-            setError(e.message);
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.detail || "Failed to save competition.");
         }
-    };
+
+        const savedCompetition = await res.json();
+        if (editingCompetition.id) {
+            setCompetitions(competitions.map(c => c.id === savedCompetition.id ? savedCompetition : c));
+        } else {
+            setCompetitions([...competitions, savedCompetition]);
+        }
+        setEditingCompetition(null);
+    } catch(e) {
+        setError(e.message);
+    }
+};
 
     const handleDelete = async (id) => {
         try {

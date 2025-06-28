@@ -11,7 +11,7 @@ class Competition(Base):
     name = Column(String, index=True, nullable=False, unique=True)
     description = Column(String)
     # The 'rules' can still be useful for the reasoning prompt, so we keep it.
-    rules = Column(JSON)
+    rules = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     judgements = relationship("Judgement", back_populates="competition")
