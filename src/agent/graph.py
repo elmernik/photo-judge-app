@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Nature Photography Competition Judge - Simplified MVP
 """
@@ -47,7 +46,7 @@ class JudgingCriterion:
 class PhotoJudgeApp:
     def __init__(self):
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash-exp",
+            model="gemini-2.5-flash-lite-preview-06-17",
             temperature=0.3
         )
         self.photos_dir = Path("photos")
@@ -270,31 +269,7 @@ class PhotoJudgeApp:
             print(f"❌ Error during evaluation: {e}")
             raise
 
-# CLI Interface
-async def main():
-    """Main CLI interface"""
-    import sys
-    
-    if len(sys.argv) != 2:
-        print("Usage: python photo_judge_mvp.py <photo_filename>")
-        print("Example: python photo_judge_mvp.py test.jpg")
-        sys.exit(1)
-    
-    photo_filename = sys.argv[1]
-    
-    try:
-        app = PhotoJudgeApp()
-        result = await app.judge_photo(photo_filename)
-        print(f"\n✅ Evaluation completed successfully!")
-        print(f"Final score: {result['overall_score']}/10.0")
-        
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        sys.exit(1)
 
-if __name__ == "__main__":
-    asyncio.run(main())
-
-# For LangGraph dev usage
+# Interface in LangGraph dev
 app = PhotoJudgeApp()
 graph = app.workflow
