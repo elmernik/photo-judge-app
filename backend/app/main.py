@@ -8,7 +8,7 @@ from typing import List, Dict, Any
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
 
 # Local imports
@@ -187,6 +187,18 @@ def get_single_judgement(judgement_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Judgement not found")
     return db_judgement
 
+@app.delete("/judgements/{judgement_id}", tags=["Judging"])
+def delete_single_judgement(judgement_id: int, db: Session = Depends(get_db)):
+    """
+    Deletes a specific judgement and its associated image file.
+    """
+    db_judgement = crud.delete_judgement(db, judgement_id=judgement_id)
+    if db_judgement is None:
+        raise HTTPException(status_code=404, detail="Judgement not found")
+    return JSONResponse(
+        status_code=200,
+        content={"message": f"Judgement {judgement_id} deleted successfully."}
+    )
 
 @app.get("/images/{filename}", tags=["Retrieval"])
 async def get_image(filename: str):

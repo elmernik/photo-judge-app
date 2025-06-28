@@ -2,6 +2,10 @@
 from sqlalchemy.orm import Session
 from . import models, schemas
 from typing import List
+import os
+from pathlib import Path
+
+IMAGE_DIR = Path("uploaded_photos")
 
 def get_judgement(db: Session, judgement_id: int):
     return db.query(models.Judgement).filter(models.Judgement.id == judgement_id).first()
@@ -23,6 +27,24 @@ def create_judgement(db: Session, judgement_data: dict, stored_filename: str, co
     db.add(db_judgement)
     db.commit()
     db.refresh(db_judgement)
+    return db_judgement
+
+def delete_judgement(db: Session, judgement_id: int):
+    """
+    Deletes a judgement and its associated image file.
+    """
+    db_judgement = get_judgement(db, judgement_id=judgement_id)
+    if db_judgement:
+        # Construct the full path to the image file
+        image_path = IMAGE_DIR / db_judgement.stored_filename
+
+        # Delete the image file from the filesystem if it exists
+        if os.path.exists(image_path):
+            os.remove(image_path)
+            
+        # Delete the judgement record from the database
+        db.delete(db_judgement)
+        db.commit()
     return db_judgement
 
 # --- Competition CRUD ---
