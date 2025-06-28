@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, TypedDict
 from dataclasses import dataclass
 from dotenv import load_dotenv
+import aiofiles
 
 # LangGraph imports
 from langgraph.graph import StateGraph, END
@@ -109,7 +110,7 @@ class PhotoJudgeApp:
         photo_path = state["photo"]["photo_path"]
         
         # Convert image to base64 for vision model
-        image_data = self._encode_image(photo_path)
+        image_data = await self._encode_image(photo_path)
         
         scores = {}
         rationales = {}
@@ -126,10 +127,14 @@ class PhotoJudgeApp:
         
         return state
     
-    def _encode_image(self, image_path: str) -> str:
-        """Encode image to base64"""
-        with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode('utf-8')
+    async def _encode_image(self, image_path: str) -> str:
+        """Asynchronously encode image to base64"""
+        import aiofiles
+        import base64
+
+        async with aiofiles.open(image_path, "rb") as image_file:
+            image_bytes = await image_file.read()
+        return base64.b64encode(image_bytes).decode("utf-8")
     
     async def _evaluate_criterion(self, image_data: str, criterion: JudgingCriterion) -> tuple[float, str]:
         """Evaluate a single criterion using vision model"""
