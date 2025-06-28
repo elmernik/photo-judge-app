@@ -224,6 +224,38 @@ def create_competition(competition: schemas.CompetitionCreate, db: Session = Dep
 def read_competitions(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     return crud.get_competitions(db, skip=skip, limit=limit)
 
+@app.delete("/competitions/{competition_id}", tags=["Management"])
+def delete_competition_endpoint(competition_id: int, db: Session = Depends(get_db)):
+    """
+    Deletes a competition and all of its associated data, including judgements
+    and stored images.
+    """
+    deleted_comp = crud.delete_competition(db, competition_id=competition_id)
+    if deleted_comp is None:
+        raise HTTPException(status_code=404, detail="Competition not found")
+    return JSONResponse(
+        status_code=200,
+        content={"message": f"Competition '{deleted_comp.name}' and all its data deleted successfully."}
+    )
+
+@app.put("/competitions/{competition_id}", response_model=schemas.Competition, tags=["Management"])
+def update_competition(
+    competition_id: int, 
+    competition: schemas.CompetitionUpdate, 
+    db: Session = Depends(get_db)
+):
+    """
+    Updates the details of an existing competition.
+    """
+    updated_competition = crud.update_competition(
+        db, 
+        competition_id=competition_id, 
+        competition_update=competition
+    )
+    if updated_competition is None:
+        raise HTTPException(status_code=404, detail="Competition not found")
+    return updated_competition
+
 @app.get("/prompts/", response_model=List[schemas.Prompt], tags=["Management"])
 def read_prompts(db: Session = Depends(get_db)):
     return crud.get_prompts(db)

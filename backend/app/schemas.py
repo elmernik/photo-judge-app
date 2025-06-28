@@ -53,6 +53,11 @@ class CompetitionBase(BaseModel):
 class CompetitionCreate(CompetitionBase):
     pass
 
+class CompetitionUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    rules: Optional[str] = None
+
 class Competition(CompetitionBase):
     id: int
     created_at: datetime

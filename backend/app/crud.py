@@ -61,6 +61,59 @@ def create_competition(db: Session, competition: schemas.CompetitionCreate) -> m
     db.refresh(db_competition)
     return db_competition
 
+def delete_competition(db: Session, competition_id: int):
+    """
+    Deletes a competition and all of its associated judgements and image files.
+    """
+    db_competition = get_competition(db, competition_id=competition_id)
+    if db_competition:
+        # 1. Find all judgements associated with this competition
+        judgements_to_delete = db.query(models.Judgement).filter(
+            models.Judgement.competition_id == competition_id
+        ).all()
+
+        # 2. Delete the physical image files for each judgement
+        for judgement in judgements_to_delete:
+            if judgement.stored_filename:
+                image_path = IMAGE_DIR / judgement.stored_filename
+                if os.path.exists(image_path):
+                    try:
+                        os.remove(image_path)
+                    except OSError as e:
+                        # Log this error if you have a logging setup
+                        print(f"Error deleting file {image_path}: {e}")
+        
+        # 3. Delete the judgement records from the database
+        # This can be done more efficiently than a loop in some DBs,
+        # but looping is safe and clear.
+        for judgement in judgements_to_delete:
+            db.delete(judgement)
+
+        # 4. Finally, delete the competition itself
+        db.delete(db_competition)
+        
+        # 5. Commit all changes to the database
+        db.commit()
+        
+    return db_competition
+
+def update_competition(db: Session, competition_id: int, competition_update: schemas.CompetitionUpdate) -> models.Competition:
+    """
+    Updates a competition's details.
+    """
+    db_competition = get_competition(db, competition_id=competition_id)
+    if db_competition:
+        # model_dump(exclude_unset=True) creates a dict with only the fields
+        # that were actually provided in the request.
+        update_data = competition_update.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_competition, key, value)
+        
+        db.commit()
+        db.refresh(db_competition)
+        
+    return db_competition
+
 # --- Criterion CRUD ---
 def get_criterion(db: Session, criterion_id: int):
     return db.query(models.Criterion).filter(models.Criterion.id == criterion_id).first()
