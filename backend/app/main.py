@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 # Local imports
 from . import crud, models, schemas
 from .database import SessionLocal, engine
-from .graph import PhotoJudgeApp
+from .graph import PhotoJudgeApp, JudgingCriterion
 
 # Create all database tables
 models.Base.metadata.create_all(bind=engine)
@@ -49,6 +49,22 @@ def get_db():
     finally:
         db.close()
 
+# --- Seed Default Criteria ---
+@app.on_event("startup")
+def startup_event():
+    db = SessionLocal()
+    if not crud.get_criteria(db):
+        print("Seeding default criteria into the database...")
+        default_criteria = [
+            schemas.CriterionCreate(name='Composition', description='Evaluate the rule of thirds, framing, balance, and leading lines.', weight=1.0, enabled=True),
+            schemas.CriterionCreate(name='Technical_Quality', description='Assess focus, exposure, sharpness, and noise levels.', weight=1.2, enabled=True),
+            schemas.CriterionCreate(name='Creativity', description='Judge the unique perspective, artistic vision, and originality.', weight=0.9, enabled=True),
+            schemas.CriterionCreate(name='Nature_Relevance', description='Consider the connection to nature, authenticity, and storytelling.', weight=1.1, enabled=True)
+        ]
+        for c in default_criteria:
+            crud.create_criterion(db, c)
+    db.close()
+
 # --- Helper Function ---
 async def process_and_store_image(file: UploadFile, db: Session) -> schemas.Judgement:
     """Helper to process a single image, judge it, and store the result."""
@@ -57,32 +73,35 @@ async def process_and_store_image(file: UploadFile, db: Session) -> schemas.Judg
         raise HTTPException(status_code=400, detail=f"File '{file.filename}' is not an image.")
 
     try:
+        # Fetch active criteria from the database for this run
+        db_criteria = crud.get_enabled_criteria(db)
+        if not db_criteria:
+            raise HTTPException(status_code=400, detail="No enabled judging criteria found in the database.")
+
+        # Convert SQLAlchemy models to JudgingCriterion dataclasses for the graph
+        judging_criteria = [JudgingCriterion(name=c.name, description=c.description, weight=c.weight) for c in db_criteria]
+
         contents = await file.read()
         image_data = base64.b64encode(contents).decode("utf-8")
 
-        # Judge the photo
         result_dict = await photo_judge_app.judge_photo(
             photo_filename=file.filename,
-            image_data=image_data
+            image_data=image_data,
+            criteria=judging_criteria # Pass criteria to the judge
         )
 
-        # Save the physical image file with a unique name
         stored_filename = f"{uuid.uuid4()}{Path(file.filename).suffix}"
         file_path = IMAGE_DIR / stored_filename
         async with aiofiles.open(file_path, "wb") as out_file:
             await out_file.write(contents)
 
-        # Store the judgement in the database
         db_judgement = crud.create_judgement(
             db=db,
             judgement_data=result_dict,
             stored_filename=stored_filename
         )
         return db_judgement
-
     except Exception as e:
-        # In a batch process, we might want to return an error object instead of raising
-        # For simplicity here, we re-raise, which will stop the whole batch request.
         raise HTTPException(status_code=500, detail=f"Error processing file {file.filename}: {str(e)}")
 
 
@@ -143,6 +162,28 @@ async def get_image(filename: str):
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(file_path)
 
+# --- Criteria Endpoints ---
+@app.get("/criteria/", response_model=List[schemas.Criterion], tags=["Criteria Management"])
+def read_criteria(db: Session = Depends(get_db)):
+    return crud.get_criteria(db)
+
+@app.post("/criteria/", response_model=schemas.Criterion, tags=["Criteria Management"])
+def create_new_criterion(criterion: schemas.CriterionCreate, db: Session = Depends(get_db)):
+    return crud.create_criterion(db=db, criterion=criterion)
+
+@app.put("/criteria/{criterion_id}", response_model=schemas.Criterion, tags=["Criteria Management"])
+def update_existing_criterion(criterion_id: int, criterion: schemas.CriterionUpdate, db: Session = Depends(get_db)):
+    db_criterion = crud.update_criterion(db, criterion_id, criterion)
+    if db_criterion is None:
+        raise HTTPException(status_code=404, detail="Criterion not found")
+    return db_criterion
+
+@app.delete("/criteria/{criterion_id}", response_model=schemas.Criterion, tags=["Criteria Management"])
+def delete_existing_criterion(criterion_id: int, db: Session = Depends(get_db)):
+    db_criterion = crud.delete_criterion(db, criterion_id)
+    if db_criterion is None:
+        raise HTTPException(status_code=404, detail="Criterion not found")
+    return db_criterion
 
 @app.get("/", tags=["General"])
 def read_root():

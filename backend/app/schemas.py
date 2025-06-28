@@ -21,3 +21,25 @@ class Judgement(JudgementBase):
 
     class Config:
         from_attributes = True # Replaces orm_mode=True in Pydantic v2
+
+# --- Criterion Schemas ---
+class CriterionBase(BaseModel):
+    name: str
+    description: str
+    weight: float = 1.0
+    enabled: bool = True
+
+class CriterionCreate(CriterionBase):
+    pass
+
+class CriterionUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    weight: Optional[float] = None
+    enabled: Optional[bool] = None
+
+class Criterion(CriterionBase):
+    id: int
+
+    class Config:
+        from_attributes = True

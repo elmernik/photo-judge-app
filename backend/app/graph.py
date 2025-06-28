@@ -49,14 +49,6 @@ class PhotoJudgeApp:
         self.photos_dir = Path("photos")
         self.photos_dir.mkdir(exist_ok=True)
         
-        self.criteria = [
-            JudgingCriterion("Composition", "Rule of thirds, framing, balance", 1.0),
-            JudgingCriterion("Technical_Quality", "Focus, exposure, sharpness", 1.2),
-            JudgingCriterion("Creativity", "Unique perspective, artistic vision", 0.9),
-            JudgingCriterion("Nature_Relevance", "Connection to nature, authenticity", 1.1),
-            JudgingCriterion("Moment_Capture", "Timing, decisive moment", 0.8)
-        ]
-        
         self.workflow = self._build_workflow()
     
     def _build_workflow(self) -> StateGraph:
@@ -75,14 +67,14 @@ class PhotoJudgeApp:
     
     async def evaluate_photo_node(self, state: AppState) -> AppState:
         print("🔍 Evaluating photo against criteria...")
-        
         image_data = state["photo"]["image_data"]
+        criteria_to_evaluate = state["criteria"] # Use criteria from the state
 
         async def evaluate(criterion: JudgingCriterion):
             print(f"  - Evaluating {criterion.name}...")
             return criterion.name, await self._evaluate_criterion(image_data, criterion)
 
-        tasks = [evaluate(criterion) for criterion in self.criteria]
+        tasks = [evaluate(criterion) for criterion in criteria_to_evaluate]
         results = await asyncio.gather(*tasks)
 
         scores = {name: score for name, (score, _) in results}
@@ -134,12 +126,11 @@ class PhotoJudgeApp:
     
     def calculate_final_score_node(self, state: AppState) -> AppState:
         print("🧮 Calculating final score...")
-        
         total_weighted_score = 0.0
         total_weight = 0.0
         
-        for criterion in self.criteria:
-            score = state["photo"]["scores"][criterion.name]
+        for criterion in state["criteria"]:
+            score = state["photo"]["scores"].get(criterion.name, 0.0)
             weight = criterion.weight
             total_weighted_score += score * weight
             total_weight += weight
@@ -155,23 +146,24 @@ class PhotoJudgeApp:
         state["photo"]["stage"] = "completed"
         return state
     
-    async def judge_photo(self, photo_filename: str, image_data: str) -> Dict[str, Any]:
+    async def judge_photo(self, photo_filename: str, image_data: str, criteria: List[JudgingCriterion]) -> Dict[str, Any]:
         print(f"🏁 Starting evaluation for: {photo_filename}")
         
+        workflow = self._build_workflow()
+
         initial_state = AppState(
             photo=PhotoState(
                 image_data=image_data,
                 filename=photo_filename,
-                scores={},
-                rationales={},
-                overall_score=0.0,
-                stage="input"
+                scores={}, rationales={}, overall_score=0.0, stage="input"
             ),
-            criteria=[c.name for c in self.criteria]
+            criteria=criteria
         )
         
         try:
-            final_state = await self.workflow.ainvoke(initial_state)
+            final_state = await workflow.ainvoke(initial_state)
+            # Add final criteria used to the report
+            final_state["photo"]["criteria_used"] = [c.name for c in criteria]
             return final_state["photo"]
         except Exception as e:
             print(f"❌ Error during evaluation: {e}")
