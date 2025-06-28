@@ -108,23 +108,22 @@ class PhotoJudgeApp:
         print("🔍 Evaluating photo against criteria...")
         
         photo_path = state["photo"]["photo_path"]
-        
-        # Convert image to base64 for vision model
         image_data = await self._encode_image(photo_path)
-        
-        scores = {}
-        rationales = {}
-        
-        for criterion in self.criteria:
+
+        async def evaluate(criterion: JudgingCriterion):
             print(f"  - Evaluating {criterion.name}...")
-            score, rationale = await self._evaluate_criterion(image_data, criterion)
-            scores[criterion.name] = score
-            rationales[criterion.name] = rationale
-        
+            return criterion.name, await self._evaluate_criterion(image_data, criterion)
+
+        tasks = [evaluate(criterion) for criterion in self.criteria]
+        results = await asyncio.gather(*tasks)
+
+        # Unpack results into scores and rationales
+        scores = {name: score for name, (score, _) in results}
+        rationales = {name: rationale for name, (_, rationale) in results}
+
         state["photo"]["scores"] = scores
         state["photo"]["rationales"] = rationales
         state["photo"]["stage"] = "evaluated"
-        
         return state
     
     async def _encode_image(self, image_path: str) -> str:
@@ -236,12 +235,6 @@ class PhotoJudgeApp:
                 "rationale": rationale
             }
         
-        # Save report
-        report_filename = f"report_{photo['filename'].split('.')[0]}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        with open(report_filename, 'w') as f:
-            json.dump(report, f, indent=2)
-        
-        print(f"\n💾 Report saved to: {report_filename}")
         
         state["photo"]["stage"] = "completed"
         return state
