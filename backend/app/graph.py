@@ -23,7 +23,7 @@ class PhotoState(TypedDict):
 class AppState(TypedDict):
     photo: PhotoState
     criteria: List["JudgingCriterion"]
-    competition_rules: Optional[Dict[str, Any]]
+    competition_rules: str
     # Add prompt templates to the state
     evaluation_prompt_template: str
     reasoning_prompt_template: str
@@ -134,7 +134,7 @@ class PhotoJudgeApp:
         # 2. Prepare a dictionary with the variables the template needs.
         prompt_variables = {
             "overall_score": photo_state["overall_score"],
-            "rules": json.dumps(rules),
+            "rules": rules,
             "feedback_summary": feedback_summary
         }
 

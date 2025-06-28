@@ -15,13 +15,6 @@ const CompetitionManager = ({ competitions, setCompetitions, closeModal, API_BAS
         e.preventDefault();
         setError(null);
         try {
-            let rules;
-            try {
-                rules = editingCompetition.rules ? JSON.parse(editingCompetition.rules) : {};
-            } catch (jsonError) {
-                throw new Error("Rules must be in valid JSON format.");
-            }
-            
             const competitionData = { ...editingCompetition, rules };
 
             const res = editingCompetition.id
@@ -69,7 +62,7 @@ const CompetitionManager = ({ competitions, setCompetitions, closeModal, API_BAS
                             <h3 className="text-lg font-semibold">{editingCompetition.id ? 'Edit' : 'Add'} Competition</h3>
                             <div><label className="font-medium text-gray-700">Name</label><input type="text" value={editingCompetition.name} onChange={e => setEditingCompetition({...editingCompetition, name: e.target.value})} className="mt-1 w-full p-2 border rounded-lg" required/></div>
                             <div><label className="font-medium text-gray-700">Description</label><textarea value={editingCompetition.description || ''} onChange={e => setEditingCompetition({...editingCompetition, description: e.target.value})} className="mt-1 w-full p-2 border rounded-lg" rows="3"/></div>
-                            <div><label className="font-medium text-gray-700">Rules (JSON format)</label><textarea value={editingCompetition.rules || ''} onChange={e => setEditingCompetition({...editingCompetition, rules: e.target.value})} className="mt-1 w-full p-2 border rounded-lg font-mono text-sm" rows="4" placeholder='{&#10;  "theme": "Wildlife",&#10;  "maxPhotos": 5&#10;}'/></div>
+                            <div><label className="font-medium text-gray-700">Rules (Only these are passed to the LLM)</label><textarea value={editingCompetition.rules || ''} onChange={e => setEditingCompetition({...editingCompetition, rules: e.target.value})} className="mt-1 w-full p-2 border rounded-lg font-mono text-sm" rows="4"/></div>
                             <div className="flex gap-4 pt-2"><button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg">Save</button><button type="button" onClick={() => setEditingCompetition(null)} className="px-4 py-2 bg-gray-200 rounded-lg">Cancel</button></div>
                         </form>
                     ) : (
@@ -82,12 +75,12 @@ const CompetitionManager = ({ competitions, setCompetitions, closeModal, API_BAS
                                         <p className="text-xs text-gray-400 mt-1">{new Date(c.created_at).toLocaleDateString()}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <button onClick={() => setEditingCompetition({...c, rules: JSON.stringify(c.rules, null, 2)})} className="p-2 text-gray-600 hover:text-blue-600"><Edit className="w-5 h-5"/></button>
+                                        <button onClick={() => setEditingCompetition({ ...c })} className="p-2 text-gray-600 hover:text-blue-600"><Edit className="w-5 h-5"/></button>
                                         <button onClick={() => handleDelete(c.id)} className="p-2 text-gray-600 hover:text-red-600"><Trash2 className="w-5 h-5"/></button>
                                     </div>
                                 </div>
                             ))}
-                            <button onClick={() => setEditingCompetition({ name: '', description: '', rules: '{\n  \n}' })} className="w-full mt-4 flex items-center justify-center gap-2 py-3 border-2 border-dashed rounded-lg hover:bg-gray-100 transition-colors"><Plus/>Add New Competition</button>
+                            <button onClick={() => setEditingCompetition({ name: '', description: '', rules: '' })} className="w-full mt-4 flex items-center justify-center gap-2 py-3 border-2 border-dashed rounded-lg hover:bg-gray-100 transition-colors"><Plus/>Add New Competition</button>
                         </div>
                     )}
                 </div>

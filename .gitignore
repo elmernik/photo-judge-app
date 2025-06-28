@@ -3,3 +3,5 @@ package-lock.json
 .venv
 uploaded_photos
 judgements.db
+.DS_Store
+__pycache__
