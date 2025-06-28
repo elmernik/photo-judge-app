@@ -162,4 +162,7 @@ class PhotoJudgeApp:
             reasoning_prompt_template=reasoning_prompt_template
         )
         final_state = await workflow.ainvoke(initial_state)
-        return final_state["photo"]
+        photo_result = dict(final_state["photo"])
+        photo_result.pop("image_data", None)
+
+        return photo_result
