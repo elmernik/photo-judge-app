@@ -1,38 +1,32 @@
+# app/graph.py
 import asyncio
 import json
-import os
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Any, TypedDict
+from typing import Dict, List, Any, TypedDict, Optional
 from dataclasses import dataclass
-from dotenv import load_dotenv
-import aiofiles
-import base64
 
-# LangGraph imports
 from langgraph.graph import StateGraph, END
-
-# LangChain imports
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
-
-# Image processing
-from PIL import Image
+from dotenv import load_dotenv
 
 load_dotenv()
 
-# Simplified data structures
 class PhotoState(TypedDict):
     image_data: str
     filename: str
     scores: Dict[str, float]
     rationales: Dict[str, str]
     overall_score: float
+    overall_reasoning: str
     stage: str
 
 class AppState(TypedDict):
     photo: PhotoState
-    criteria: List[str]
+    criteria: List["JudgingCriterion"]
+    competition_rules: Optional[Dict[str, Any]]
+    # Add prompt templates to the state
+    evaluation_prompt_template: str
+    reasoning_prompt_template: str
 
 @dataclass
 class JudgingCriterion:
@@ -42,64 +36,46 @@ class JudgingCriterion:
 
 class PhotoJudgeApp:
     def __init__(self):
-        self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash-lite-preview-06-17",
-            temperature=0.3
-        )
-        self.photos_dir = Path("photos")
-        self.photos_dir.mkdir(exist_ok=True)
-        
-        self.workflow = self._build_workflow()
-    
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite-preview-06-17", temperature=0.3)
+
     def _build_workflow(self) -> StateGraph:
         workflow = StateGraph(AppState)
-        
         workflow.add_node("evaluate_photo", self.evaluate_photo_node)
         workflow.add_node("calculate_final_score", self.calculate_final_score_node)
-        workflow.add_node("generate_report", self.generate_report_node)
-        
+        workflow.add_node("generate_overall_reasoning", self.generate_overall_reasoning_node)
+
         workflow.set_entry_point("evaluate_photo")
         workflow.add_edge("evaluate_photo", "calculate_final_score")
-        workflow.add_edge("calculate_final_score", "generate_report")
-        workflow.add_edge("generate_report", END)
-        
+        workflow.add_edge("calculate_final_score", "generate_overall_reasoning")
+        workflow.add_edge("generate_overall_reasoning", END)
         return workflow.compile()
-    
+
     async def evaluate_photo_node(self, state: AppState) -> AppState:
         print("🔍 Evaluating photo against criteria...")
         image_data = state["photo"]["image_data"]
-        criteria_to_evaluate = state["criteria"] # Use criteria from the state
+        criteria_to_evaluate = state["criteria"]
+        prompt_template = state["evaluation_prompt_template"]
 
         async def evaluate(criterion: JudgingCriterion):
-            print(f"  - Evaluating {criterion.name}...")
-            return criterion.name, await self._evaluate_criterion(image_data, criterion)
+            return criterion.name, await self._evaluate_criterion(image_data, criterion, prompt_template)
 
         tasks = [evaluate(criterion) for criterion in criteria_to_evaluate]
         results = await asyncio.gather(*tasks)
-
-        scores = {name: score for name, (score, _) in results}
-        rationales = {name: rationale for name, (_, rationale) in results}
-
-        state["photo"]["scores"] = scores
-        state["photo"]["rationales"] = rationales
+        state["photo"]["scores"] = {name: score for name, (score, _) in results}
+        state["photo"]["rationales"] = {name: rationale for name, (_, rationale) in results}
         state["photo"]["stage"] = "evaluated"
         return state
     
-    async def _evaluate_criterion(self, image_data: str, criterion: JudgingCriterion) -> tuple[float, str]:
+    async def _evaluate_criterion(self, image_data: str, criterion: JudgingCriterion, template: str) -> tuple[float, str]:
+        # The prompt is now created dynamically from the template in the DB
+        prompt_text = template.format(
+            criterion_name=criterion.name,
+            criterion_description=criterion.description
+        )
         prompt = ChatPromptTemplate.from_messages([
-            ("system", f"""You are an expert nature photography judge. Evaluate this photograph for {criterion.name}.
-
-            {criterion.description}
-
-            Provide:
-            1. A score from 0.0 to 10.0
-            2. A brief rationale (2-3 sentences)
-
-            Format your response as:
-            SCORE: [number]
-            RATIONALE: [explanation]"""),
+            ("system", prompt_text),
             ("user", [
-                {"type": "text", "text": f"Please evaluate this nature photograph for {criterion.name}."},
+                {"type": "text", "text": f"Please evaluate this photograph."},
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_data}"}}
             ])
         ])
@@ -141,30 +117,49 @@ class PhotoJudgeApp:
         
         return state
     
-    def generate_report_node(self, state: AppState) -> AppState:
-        print("📋 Generating report...")
-        state["photo"]["stage"] = "completed"
+    async def generate_overall_reasoning_node(self, state: AppState) -> AppState:
+        print("📝 Generating overall reasoning...")
+        photo_state = state["photo"]
+        rules = state.get("competition_rules", "general photography principles")
+        template = state["reasoning_prompt_template"]
+
+        feedback_summary = "\n".join(
+            f"- {name} (Score: {photo_state['scores'][name]}): {rationale}"
+            for name, rationale in photo_state['rationales'].items()
+        )
+
+         # 1. Create the prompt directly from the raw template. DO NOT format it here.
+        prompt = ChatPromptTemplate.from_template(template)
+        
+        # 2. Prepare a dictionary with the variables the template needs.
+        prompt_variables = {
+            "overall_score": photo_state["overall_score"],
+            "rules": json.dumps(rules),
+            "feedback_summary": feedback_summary
+        }
+
+        # 3. Create the chain and pass the variables dictionary to .ainvoke()
+        chain = prompt | self.llm
+        response = await chain.ainvoke(prompt_variables)
+
+        photo_state["overall_reasoning"] = response.content
+        photo_state["stage"] = "completed"
         return state
-    
-    async def judge_photo(self, photo_filename: str, image_data: str, criteria: List[JudgingCriterion]) -> Dict[str, Any]:
-        print(f"🏁 Starting evaluation for: {photo_filename}")
+
+    async def judge_photo(self, photo_filename: str, image_data: str, criteria: List[JudgingCriterion],
+                          competition_rules: Dict[str, Any], evaluation_prompt_template: str,
+                          reasoning_prompt_template: str) -> Dict[str, Any]:
         
         workflow = self._build_workflow()
-
         initial_state = AppState(
             photo=PhotoState(
-                image_data=image_data,
-                filename=photo_filename,
-                scores={}, rationales={}, overall_score=0.0, stage="input"
+                image_data=image_data, filename=photo_filename, scores={},
+                rationales={}, overall_score=0.0, overall_reasoning="", stage="input"
             ),
-            criteria=criteria
+            criteria=criteria,
+            competition_rules=competition_rules,
+            evaluation_prompt_template=evaluation_prompt_template,
+            reasoning_prompt_template=reasoning_prompt_template
         )
-        
-        try:
-            final_state = await workflow.ainvoke(initial_state)
-            # Add final criteria used to the report
-            final_state["photo"]["criteria_used"] = [c.name for c in criteria]
-            return final_state["photo"]
-        except Exception as e:
-            print(f"❌ Error during evaluation: {e}")
-            raise
+        final_state = await workflow.ainvoke(initial_state)
+        return final_state["photo"]

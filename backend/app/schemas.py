@@ -1,26 +1,26 @@
 # app/schemas.py
-from pydantic import BaseModel
-from typing import Dict, Any, Optional
+from pydantic import BaseModel, Field
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 
-# Base schema for a judgement's details
-class JudgementBase(BaseModel):
-    original_filename: str
-    overall_score: float
-    judgement_details: Dict[str, Any]
+# --- Prompt Schemas ---
+class PromptBase(BaseModel):
+    name: str
+    template: str
+    description: Optional[str] = None
 
-# Schema for creating a new judgement in the DB
-class JudgementCreate(JudgementBase):
-    stored_filename: str
+class PromptCreate(PromptBase):
+    pass
 
-# Schema for reading a judgement from the DB (will be returned by the API)
-class Judgement(JudgementBase):
+class PromptUpdate(BaseModel):
+    template: Optional[str] = None
+    description: Optional[str] = None
+
+class Prompt(PromptBase):
     id: int
-    stored_filename: str
-    created_at: datetime
 
     class Config:
-        from_attributes = True # Replaces orm_mode=True in Pydantic v2
+        from_attributes = True
 
 # --- Criterion Schemas ---
 class CriterionBase(BaseModel):
@@ -40,6 +40,41 @@ class CriterionUpdate(BaseModel):
 
 class Criterion(CriterionBase):
     id: int
+
+    class Config:
+        from_attributes = True
+
+# --- Competition Schemas ---
+class CompetitionBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    rules: Optional[Dict[str, Any]] = None
+
+class CompetitionCreate(CompetitionBase):
+    pass
+
+class Competition(CompetitionBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# --- Judgement Schemas ---
+class JudgementBase(BaseModel):
+    original_filename: str
+    overall_score: float
+    judgement_details: Dict[str, Any]
+
+class JudgementCreate(JudgementBase):
+    stored_filename: str
+    competition_id: int
+
+class Judgement(JudgementBase):
+    id: int
+    stored_filename: str
+    created_at: datetime
+    competition_id: int
 
     class Config:
         from_attributes = True

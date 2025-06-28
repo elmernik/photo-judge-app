@@ -9,17 +9,35 @@ def get_judgement(db: Session, judgement_id: int):
 def get_judgements(db: Session, skip: int = 0, limit: int = 20):
     return db.query(models.Judgement).offset(skip).limit(limit).all()
 
-def create_judgement(db: Session, judgement_data: dict, stored_filename: str) -> models.Judgement:
+def get_judgements_by_competition(db: Session, competition_id: int, skip: int = 0, limit: int = 100):
+    return db.query(models.Judgement).filter(models.Judgement.competition_id == competition_id).offset(skip).limit(limit).all()
+
+def create_judgement(db: Session, judgement_data: dict, stored_filename: str, competition_id: int) -> models.Judgement:
     db_judgement = models.Judgement(
         original_filename=judgement_data['filename'],
         stored_filename=stored_filename,
         overall_score=judgement_data['overall_score'],
-        judgement_details=judgement_data # Store the full dictionary
+        judgement_details=judgement_data,
+        competition_id=competition_id
     )
     db.add(db_judgement)
     db.commit()
     db.refresh(db_judgement)
     return db_judgement
+
+# --- Competition CRUD ---
+def get_competition(db: Session, competition_id: int):
+    return db.query(models.Competition).filter(models.Competition.id == competition_id).first()
+
+def get_competitions(db: Session, skip: int = 0, limit: int = 20):
+    return db.query(models.Competition).offset(skip).limit(limit).all()
+
+def create_competition(db: Session, competition: schemas.CompetitionCreate) -> models.Competition:
+    db_competition = models.Competition(**competition.model_dump())
+    db.add(db_competition)
+    db.commit()
+    db.refresh(db_competition)
+    return db_competition
 
 # --- Criterion CRUD ---
 def get_criterion(db: Session, criterion_id: int):
@@ -54,3 +72,27 @@ def delete_criterion(db: Session, criterion_id: int):
         db.delete(db_criterion)
         db.commit()
     return db_criterion
+
+# --- Prompt CRUD ---
+def get_prompt_by_name(db: Session, name: str) -> models.Prompt:
+    return db.query(models.Prompt).filter(models.Prompt.name == name).first()
+
+def get_prompts(db: Session) -> List[models.Prompt]:
+    return db.query(models.Prompt).all()
+
+def create_prompt(db: Session, prompt: schemas.PromptCreate) -> models.Prompt:
+    db_prompt = models.Prompt(**prompt.model_dump())
+    db.add(db_prompt)
+    db.commit()
+    db.refresh(db_prompt)
+    return db_prompt
+
+def update_prompt(db: Session, prompt_id: int, prompt_update: schemas.PromptUpdate) -> models.Prompt:
+    db_prompt = db.query(models.Prompt).filter(models.Prompt.id == prompt_id).first()
+    if db_prompt:
+        update_data = prompt_update.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_prompt, key, value)
+        db.commit()
+        db.refresh(db_prompt)
+    return db_prompt

@@ -6,7 +6,7 @@ import asyncio
 from pathlib import Path
 from typing import List, Dict, Any
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -49,7 +49,7 @@ def get_db():
     finally:
         db.close()
 
-# --- Seed Default Criteria ---
+# --- Seed Default Criteria and prompts if they don't exist ---
 @app.on_event("startup")
 def startup_event():
     db = SessionLocal()
@@ -63,69 +63,106 @@ def startup_event():
         ]
         for c in default_criteria:
             crud.create_criterion(db, c)
+
+    if not crud.get_prompt_by_name(db, "EVALUATION_PROMPT"):
+        print("Seeding EVALUATION_PROMPT...")
+        crud.create_prompt(db, schemas.PromptCreate(
+                            name="EVALUATION_PROMPT",
+                            template="""You are an expert photography judge. Evaluate this photograph for {criterion_name}.
+
+                                        {criterion_description}
+
+                                        Provide:
+                                        1. A score from 0.0 to 10.0
+                                        2. A brief rationale (2-3 sentences)
+
+                                        Format your response as:
+                                        SCORE: [number]
+                                        RATIONALE: [explanation]""",
+                                                    description="The prompt used for evaluating a single criterion."
+                                                ))
+    if not crud.get_prompt_by_name(db, "REASONING_PROMPT"):
+        print("Seeding REASONING_PROMPT...")
+        crud.create_prompt(db, schemas.PromptCreate(
+                            name="REASONING_PROMPT",
+                            template="""You are the head judge of a photography competition. You have received feedback from your panel of judges on a photograph. Your task is to synthesize this feedback into a final, coherent summary for the photographer.
+
+                                        The photograph received an overall score of {overall_score}/10.
+                                        The competition rules emphasize: {rules}
+
+                                        Here is the detailed feedback from the panel:
+                                        {feedback_summary}
+
+                                        Based on all of this, please provide a final summary. Explain what is good about the photo, how it could be improved, and how well it fits the competition's specific rules. Address the photographer directly in a helpful and encouraging tone.""",
+                                                    description="The prompt for generating the final overall reasoning."
+                                                ))
     db.close()
 
 # --- Helper Function ---
-async def process_and_store_image(file: UploadFile, db: Session) -> schemas.Judgement:
-    """Helper to process a single image, judge it, and store the result."""
-    if not file.content_type.startswith("image/"):
-        # This check is now per-file, useful for batch processing
-        raise HTTPException(status_code=400, detail=f"File '{file.filename}' is not an image.")
+async def process_and_store_image(file: UploadFile, competition_id: int, db: Session) -> schemas.Judgement:
+    competition = crud.get_competition(db, competition_id)
+    if not competition:
+        raise HTTPException(status_code=404, detail="Competition not found")
 
-    try:
-        # Fetch active criteria from the database for this run
-        db_criteria = crud.get_enabled_criteria(db)
-        if not db_criteria:
-            raise HTTPException(status_code=400, detail="No enabled judging criteria found in the database.")
+    # Fetch global enabled criteria
+    db_criteria = crud.get_enabled_criteria(db)
+    if not db_criteria:
+        raise HTTPException(status_code=400, detail="No enabled judging criteria found.")
+    
+    # Fetch prompt templates
+    eval_prompt = crud.get_prompt_by_name(db, "EVALUATION_PROMPT")
+    reasoning_prompt = crud.get_prompt_by_name(db, "REASONING_PROMPT")
+    if not eval_prompt or not reasoning_prompt:
+        raise HTTPException(status_code=500, detail="Core prompt templates not found in DB.")
 
-        # Convert SQLAlchemy models to JudgingCriterion dataclasses for the graph
-        judging_criteria = [JudgingCriterion(name=c.name, description=c.description, weight=c.weight) for c in db_criteria]
+    judging_criteria = [JudgingCriterion(name=c.name, description=c.description, weight=c.weight) for c in db_criteria]
+    
+    contents = await file.read()
+    image_data = base64.b64encode(contents).decode("utf-8")
 
-        contents = await file.read()
-        image_data = base64.b64encode(contents).decode("utf-8")
+    result_dict = await photo_judge_app.judge_photo(
+        photo_filename=file.filename,
+        image_data=image_data,
+        criteria=judging_criteria,
+        competition_rules=competition.rules,
+        evaluation_prompt_template=eval_prompt.template,
+        reasoning_prompt_template=reasoning_prompt.template
+    )
 
-        result_dict = await photo_judge_app.judge_photo(
-            photo_filename=file.filename,
-            image_data=image_data,
-            criteria=judging_criteria # Pass criteria to the judge
-        )
+    stored_filename = f"{uuid.uuid4()}{Path(file.filename).suffix}"
+    async with aiofiles.open(IMAGE_DIR / stored_filename, "wb") as out_file:
+        await out_file.write(contents)
 
-        stored_filename = f"{uuid.uuid4()}{Path(file.filename).suffix}"
-        file_path = IMAGE_DIR / stored_filename
-        async with aiofiles.open(file_path, "wb") as out_file:
-            await out_file.write(contents)
-
-        db_judgement = crud.create_judgement(
-            db=db,
-            judgement_data=result_dict,
-            stored_filename=stored_filename
-        )
-        return db_judgement
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing file {file.filename}: {str(e)}")
+    return crud.create_judgement(db, result_dict, stored_filename, competition_id)
 
 
 # --- API Endpoints ---
 @app.post("/judge/", response_model=schemas.Judgement, tags=["Judging"])
 async def judge_single_photo(
-    file: UploadFile = File(...), db: Session = Depends(get_db)
+    file: UploadFile = File(...),
+    competition_id: int = Form(...), # <-- Add this
+    db: Session = Depends(get_db)
 ):
     """
-    Judges a single image, saves it, stores the grading in the database,
-    and returns the complete judgement record.
+    Judges a single image for a specific competition, saves it, 
+    stores the grading in the database, and returns the complete judgement record.
     """
-    return await process_and_store_image(file, db)
+    # Pass all three required arguments
+    return await process_and_store_image(file, competition_id, db)
 
 
 @app.post("/judge-batch/", response_model=List[schemas.Judgement], tags=["Judging"])
 async def judge_multiple_photos(
-    files: List[UploadFile] = File(...), db: Session = Depends(get_db)
+    files: List[UploadFile] = File(...),
+    competition_id: int = Form(...), # <-- Add this
+    db: Session = Depends(get_db)
 ):
     """
-    Judges multiple images concurrently, saves them, stores the gradings,
-    and returns a list of judgement records.
+    Judges multiple images concurrently for a specific competition, saves them, 
+    stores the gradings, and returns a list of judgement records.
     """
-    tasks = [process_and_store_image(file, db) for file in files]
+    # Pass all three required arguments to the helper function for each file
+    tasks = [process_and_store_image(file, competition_id, db) for file in files]
     results = await asyncio.gather(*tasks)
     return results
 
@@ -161,6 +198,30 @@ async def get_image(filename: str):
     if not file_path.is_file():
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(file_path)
+
+@app.get("/competitions/{competition_id}/judgements", response_model=List[schemas.Judgement], tags=["Retrieval"])
+def get_judgements_for_competition(competition_id: int, db: Session = Depends(get_db)):
+    return crud.get_judgements_by_competition(db, competition_id=competition_id)
+
+# --- Management Endpoints ---
+@app.post("/competitions/", response_model=schemas.Competition, tags=["Management"])
+def create_competition(competition: schemas.CompetitionCreate, db: Session = Depends(get_db)):
+    return crud.create_competition(db, competition)
+
+@app.get("/competitions/", response_model=List[schemas.Competition], tags=["Management"])
+def read_competitions(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    return crud.get_competitions(db, skip=skip, limit=limit)
+
+@app.get("/prompts/", response_model=List[schemas.Prompt], tags=["Management"])
+def read_prompts(db: Session = Depends(get_db)):
+    return crud.get_prompts(db)
+
+@app.put("/prompts/{prompt_id}", response_model=schemas.Prompt, tags=["Management"])
+def update_prompt(prompt_id: int, prompt: schemas.PromptUpdate, db: Session = Depends(get_db)):
+    db_prompt = crud.update_prompt(db, prompt_id, prompt)
+    if db_prompt is None:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+    return db_prompt
 
 # --- Criteria Endpoints ---
 @app.get("/criteria/", response_model=List[schemas.Criterion], tags=["Criteria Management"])
