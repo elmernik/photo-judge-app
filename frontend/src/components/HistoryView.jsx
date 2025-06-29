@@ -28,7 +28,7 @@ const gridItemVariants = {
 
 // A styled container for loading and empty states
 const InfoCard = ({ children }) => (
-    <div className="text-center py-20 px-8 bg-gradient-to-br from-blue-50 to-sky-50 border border-blue-200 rounded-xl shadow-lg">
+    <div className="text-center py-20 px-8 bg-white border border-blue-200 rounded-xl shadow-lg">
         {children}
     </div>
 );
