@@ -1,68 +1,93 @@
+# 📚 Nature Photography Competition Judge — Backend API Usage & Architecture
 
+Once the server is running, the interactive API documentation is available at:
 
-# 📚 Nature Photography Competition Judge API API Usage & Documentation
+* **Swagger UI**: `http://127.0.0.1:8000/docs`
+* **ReDoc**: `http://127.0.0.1:8000/redoc`
 
-Once the server is running, you can access the interactive API documentation to explore and test all available endpoints:
-
-* **Swagger UI:** `http://127.0.0.1:8000/docs`
-* **ReDoc:** `http://127.0.0.1:8000/redoc`
-
-The API is organized into logical groups (tags) which correspond to the router files in `app/api/routers/`.
+The API is organized into logical groups via FastAPI tags, corresponding to router modules in `app/api/routers/`.
 
 ---
 
-## 📂 Project Structure & Code Guide
+## 🧭 Project Structure
 
-The project follows a modular, service-oriented structure to separate concerns and improve maintainability. Here’s a guide to where you can find key functionality:
+The backend follows a modular, service-oriented design for clarity and maintainability.
 
-
+```
 app/
-├── api/          # API Layer: Endpoints & Dependencies
+├── api/          # API layer (routing, dependencies)
 │   ├── deps.py
 │   └── routers/
 │       ├── judging.py
 │       ├── management.py
 │       └── images.py
 │
-├── core/         # Core Application Logic
+├── core/         # Global configuration and startup logic
 │   ├── config.py
 │   └── startup.py
 │
-├── crud/         # Database Operations
+├── crud/         # Data access (CRUD operations)
 │   └── crud.py
 │
-├── db/           # Database Setup
+├── db/           # Database schema and session handling
 │   ├── database.py
 │   ├── models.py
 │   └── schemas.py
 │
-├── services/     # Business Logic
+├── services/     # Business logic layer
 │   ├── ai_services.py
-│   └── judging_service.py
+│   ├── judging_service.py
+│   └── guideline_service.py
 │
-└── main.py       # Application Entrypoint
+└── main.py       # FastAPI app entrypoint
+```
 
+---
 
-### Directory Breakdown
+## 📁 Directory Overview
 
-* **`main.py`**: The main entrypoint that initializes the FastAPI application, sets up middleware, and includes the API routers. It's kept intentionally lean.
+### `main.py`
 
-* **`api/`**: This package contains all the API-specific code.
-    * **`routers/`**: Each file (`judging.py`, `management.py`) defines a set of related API endpoints using `APIRouter`. This is where you'll find the path operations (`@router.post`, `@router.get`, etc.).
-    * **`deps.py`**: Holds common API dependencies, like the `get_db` function used for dependency injection.
+Initializes the FastAPI application, includes all routers, and configures middleware. It serves as the central entrypoint.
 
-* **`services/`**: This is where the core business logic lives. The API routers call functions in this layer to perform the actual work.
-    * **`judging_service.py`**: Contains the logic for processing and evaluating an image.
-    * **`guideline_service.py`**: Handles generating competition guidelines via Tavily and Google Gemini.
+### `api/`
 
-* **`core/`**: Contains application-wide configuration and startup logic.
-    * **`config.py`**: Manages environment variables and application settings using Pydantic.
-    * **`startup.py`**: Contains logic that runs on application startup, such as seeding the database with initial data.
+Contains the API layer:
 
-* **`crud/`**: The data access layer.
-    * **`crud.py`**: Contains all functions for interacting directly with the database (Create, Read, Update, Delete). These functions are called by the API and service layers.
+* **`routers/`**: Defines API endpoints using `APIRouter`:
 
-* **`db/`**: Contains everything related to the database schema and connection.
-    * **`models.py`**: Defines the SQLAlchemy database models (the tables).
-    * **`schemas.py`**: Defines the Pydantic schemas used for data validation, request bodies, and API responses.
-    * **`database.py`**: Manages the database engine and session creation.
+  * `judging.py`: Endpoints for evaluating images.
+  * `management.py`: Endpoints for managing competitions, criteria, and prompts.
+  * `images.py`: Endpoints for image upload and retrieval.
+* **`deps.py`**: Common dependencies (e.g., `get_db` for DB session injection).
+
+### `services/`
+
+Implements core business logic, invoked by routers:
+
+* `judging_service.py`: Handles image analysis and scoring logic.
+* `guideline_service.py`: Generates competition guidelines using external AI services (e.g., Tavily, Gemini).
+* `ai_services.py`: Interfaces with external AI providers.
+
+### `core/`
+
+Global configuration:
+
+* `config.py`: Loads environment variables and settings via Pydantic.
+* `startup.py`: Startup routines, such as database seeding.
+
+### `crud/`
+
+Encapsulates direct database operations:
+
+* `crud.py`: Defines functions for data manipulation (Create, Read, Update, Delete).
+
+### `db/`
+
+Manages the database schema and connectivity:
+
+* `models.py`: SQLAlchemy models defining the database schema.
+* `schemas.py`: Pydantic schemas for request/response validation.
+* `database.py`: SQLAlchemy engine and session setup.
+
+---
