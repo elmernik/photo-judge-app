@@ -1,6 +1,6 @@
 # 🤖 AI Photo Judge
 
-An AI-powered workflow designed to judge photos for photography competitions, using a LangGraph-based agent to analyze and score images.
+A simple AI-powered workflow designed to judge photos for photography competitions, using a LangGraph-based agent to analyze and score images.
 
 ---
 
