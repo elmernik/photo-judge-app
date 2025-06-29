@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Edit, Trash2, Plus, CheckCircle, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react';
+import { X, Edit, Trash2, Plus, CheckCircle, ToggleLeft, ToggleRight, AlertTriangle, Info } from 'lucide-react';
 
 // Shared Components
 const ModalContainer = ({ children, title, onClose }) => (
@@ -60,6 +60,31 @@ const Card = ({ children, className = '' }) => (
 );
 
 // Prompt Manager Components
+const PromptHint = ({ title, variables, outputFormat }) => (
+    <div className="mt-3 p-4 bg-blue-100/50 border border-blue-200/60 rounded-lg text-sm shadow-sm">
+        <div className="flex items-start gap-3">
+            <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div>
+                <h4 className="font-semibold text-blue-800 mb-2">{title}</h4>
+                <div className="space-y-2 text-blue-700">
+                    <div>
+                        <p className="font-medium text-xs text-blue-600 uppercase tracking-wider mb-1">Required Variables</p>
+                        <div className="flex flex-wrap gap-2">
+                            {variables.map(v => <code key={v} className="text-xs font-mono bg-blue-200/70 text-blue-900 px-1.5 py-0.5 rounded">{v}</code>)}
+                        </div>
+                    </div>
+                    <div>
+                        <p className="font-medium text-xs text-blue-600 uppercase tracking-wider mb-1">Required Output</p>
+                         <div className="flex flex-wrap gap-2">
+                            {outputFormat.map(o => <code key={o} className="text-xs font-mono bg-blue-200/70 text-blue-900 px-1.5 py-0.5 rounded">{o}</code>)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
 const PromptCard = ({ prompt, onEdit, onDelete, onToggleEnabled }) => {
     const isEnabled = prompt.enabled;
 
@@ -109,11 +134,28 @@ const PromptCard = ({ prompt, onEdit, onDelete, onToggleEnabled }) => {
     );
 };
 
+const PROMPT_HINTS = {
+  EVALUATION_PROMPT: {
+    title: "Evaluation Prompt Requirements",
+    variables: ["{criterion_name}", "{criterion_description}"],
+    outputFormat: ["SCORE: [number]", "RATIONALE: [explanation]"],
+  },
+  REASONING_PROMPT: {
+    title: "Reasoning Prompt Requirements",
+    variables: ["{overall_score}", "{rules}", "{feedback_summary}"],
+    outputFormat: ["FINAL_SCORE: [score]", "RATIONALE: [summary]"],
+  },
+};
+
+
 const PromptForm = ({ initialPrompt, onSave, onCancel }) => {
     const [prompt, setPrompt] = useState(
         initialPrompt || { type: 'EVALUATION_PROMPT', description: '', template: '', enabled: false }
     );
     const isEditing = !!initialPrompt;
+
+    // Get the hints for the currently selected prompt type
+    const currentHint = PROMPT_HINTS[prompt.type];
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -131,7 +173,7 @@ const PromptForm = ({ initialPrompt, onSave, onCancel }) => {
                     {isEditing ? (
                         <input 
                             type="text" 
-                            value={prompt.type} 
+                            value={prompt.type.replace(/_/g, ' ')} 
                             className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed text-gray-500" 
                             disabled 
                         />
@@ -150,7 +192,7 @@ const PromptForm = ({ initialPrompt, onSave, onCancel }) => {
                 <FormField label="Description">
                     <input
                         type="text"
-                        placeholder="e.g., A prompt for creative analysis"
+                        placeholder="e.g., A prompt for harsher judging"
                         value={prompt.description || ''}
                         onChange={e => setPrompt({ ...prompt, description: e.target.value })}
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -166,6 +208,14 @@ const PromptForm = ({ initialPrompt, onSave, onCancel }) => {
                         placeholder="Enter the prompt template here..."
                         required
                     />
+                    {/* --- HINT IS ADDED HERE --- */}
+                    {currentHint && (
+                        <PromptHint
+                            title={currentHint.title}
+                            variables={currentHint.variables}
+                            outputFormat={currentHint.outputFormat}
+                        />
+                    )}
                 </FormField>
 
                 <div className="flex items-start gap-3">
