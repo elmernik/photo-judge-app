@@ -12,8 +12,14 @@ The frontend is a React + Vite application that provides a user interface for up
 
 ### Showcase
 
-<img width="1512" alt="image" src="https://github.com/user-attachments/assets/5fd25071-f4a8-4350-99ee-0250c2a29ea7" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/082429d6-35f7-48d4-8348-286d531858ed" width="45%" />
+  <img src="https://github.com/user-attachments/assets/cc6c19db-5b0c-45c7-9c52-5ef123e3f865" width="45%" />
+</p>
 
+#### Note
+
+> Prompts need to be adjusted for the LLM to behave more critically and to create bigger divergences in the score. Default behaviour is too encouraging and positive.
 
 ---
 
