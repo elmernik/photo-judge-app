@@ -637,7 +637,7 @@ const CompetitionManager = ({ competitions, setCompetitions, closeModal, API_BAS
                                     value={editingCompetition.name || ''} 
                                     onChange={e => setEditingCompetition({...editingCompetition, name: e.target.value})} 
                                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    placeholder="e.g., Creative Writing Contest"
+                                    placeholder="e.g., Nature photographer of the year"
                                     required
                                 />
                             </FormField>
@@ -658,7 +658,7 @@ const CompetitionManager = ({ competitions, setCompetitions, closeModal, API_BAS
                                     onChange={e => setEditingCompetition({...editingCompetition, rules: e.target.value})} 
                                     className="w-full p-3 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                     rows="6"
-                                    placeholder="Enter the specific rules and instructions that will be passed to the LLM..."
+                                    placeholder="Enter the specific rules and instructions for the competition that will be passed to the LLM for the final evaluation..."
                                 />
                             </FormField>
                             

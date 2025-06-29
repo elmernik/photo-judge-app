@@ -126,7 +126,7 @@ def startup_event():
 
                                 Your final output MUST be in the following format. Do not add any other text outside of this structure:
                                 FINAL_SCORE: [Your final score out of 10. This can be the same as the preliminary score or a new one you deem more appropriate.]
-                                RATIONALE: [Your comprehensive final summary for the photographer. Explain the final score. Address the photographer directly in a helpful and encouraging tone. Explain what is good about the photo, how it could be improved, and how well it fits the competition's specific rules. If you adjusted the score from the preliminary one, briefly explain why.]""",
+                                RATIONALE: [Your final summary for the photographer in maximum 60 words. Explain the final score. Be concise, clear and neutral. Explain what is good about the photo, how it could be improved, and how well it fits the competition's specific rules. If you adjusted the score from the preliminary one, briefly explain why.]""",
                                                     description="The default prompt for generating the final overall reasoning and a potentially revised final score."
                                                 )
                                             )
