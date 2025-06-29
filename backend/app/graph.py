@@ -20,6 +20,7 @@ class PhotoState(TypedDict):
     rationales: Dict[str, str]
     overall_score: float
     overall_reasoning: str
+    overall_reasoning_score: float | None
     stage: str
 
 
@@ -135,7 +136,7 @@ class PhotoJudgeApp:
         return state
 
     async def generate_overall_reasoning_node(self, state: AppState) -> AppState:
-        """Generate an overall reasoning summary based on evaluation results."""
+        """Generate an overall reasoning summary and a final, potentially adjusted score."""
         photo_state = state["photo"]
         rules = state.get("competition_rules", "general photography principles")
         template = state["reasoning_prompt_template"]
@@ -154,8 +155,34 @@ class PhotoJudgeApp:
 
         chain = prompt | self.llm
         response = await chain.ainvoke(prompt_variables)
+        content = response.content
 
-        photo_state["overall_reasoning"] = response.content
+        try:
+            # Default to the original calculated score and the full response if parsing fails
+            final_score = photo_state["overall_score"]
+            reasoning = content
+
+            # Attempt to parse the final score from the LLM's response
+            score_line = next((line for line in content.split('\n') if line.startswith('FINAL_SCORE:')), None)
+            if score_line:
+                score_str = score_line.split('FINAL_SCORE:')[1].strip()
+                final_score = float(score_str)
+                final_score = max(0.0, min(10.0, final_score)) # Clamp score between 0 and 10
+
+            # Attempt to parse the rationale from the LLM's response
+            rationale_section = content.split('RATIONALE:')
+            if len(rationale_section) > 1:
+                reasoning = rationale_section[1].strip()
+
+            photo_state["overall_reasoning_score"] = round(final_score, 2)
+            photo_state["overall_reasoning"] = reasoning
+
+        except (ValueError, IndexError) as e:
+            print(f"Error parsing final reasoning and score: {e}. Using raw output.")
+            # In case of any error, save the raw content and use the original score
+            photo_state["overall_reasoning"] = content
+            photo_state["overall_reasoning_score"] = photo_state["overall_score"]
+
         photo_state["stage"] = "completed"
         return state
 

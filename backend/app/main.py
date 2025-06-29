@@ -114,18 +114,22 @@ def startup_event():
                 schemas.PromptCreate(
                     type="REASONING_PROMPT",
                     enabled=True,
-                    template="""You are the head judge of a photography competition. You have received feedback from your panel of judges on a photograph. Your task is to synthesize this feedback into a final, coherent summary for the photographer.
+                    template="""You are the head judge of a photography competition. You have received feedback and scores from your panel of judges on a photograph. Your task is to synthesize this feedback and provide one final, authoritative assessment.
 
-                                The photograph received an overall score of {overall_score}/10.
+                                The photograph received a *preliminary* calculated score of {overall_score}/10 based on the panel's feedback.
                                 The competition rules emphasize: {rules}
 
                                 Here is the detailed feedback from the panel:
                                 {feedback_summary}
 
-                                Based on all of this, please provide a final summary. Explain what is good about the photo, how it could be improved, and how well it fits the competition's specific rules. Address the photographer directly in a helpful and encouraging tone.""",
-                    description="The default prompt for generating the final overall reasoning."
-                )
-            )
+                                Based on a holistic review of the photo's strengths and weaknesses, and considering the competition rules, you must now provide your final judgment. Decide if the preliminary score is accurate or if it needs adjustment. An adjustment might be warranted if the individual scores don't fully capture a significant flaw or an outstanding quality that transcends the individual criteria.
+
+                                Your final output MUST be in the following format. Do not add any other text outside of this structure:
+                                FINAL_SCORE: [Your final score out of 10. This can be the same as the preliminary score or a new one you deem more appropriate.]
+                                RATIONALE: [Your comprehensive final summary for the photographer. Explain the final score. Address the photographer directly in a helpful and encouraging tone. Explain what is good about the photo, how it could be improved, and how well it fits the competition's specific rules. If you adjusted the score from the preliminary one, briefly explain why.]""",
+                                                    description="The default prompt for generating the final overall reasoning and a potentially revised final score."
+                                                )
+                                            )
     finally:
         db.close()
 
