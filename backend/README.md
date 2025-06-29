@@ -34,7 +34,6 @@ app/
 │   └── schemas.py
 │
 ├── services/     # Business logic layer
-│   ├── ai_services.py
 │   ├── judging_service.py
 │   └── guideline_service.py
 │
@@ -66,7 +65,6 @@ Implements core business logic, invoked by routers:
 
 * `judging_service.py`: Handles image analysis and scoring logic.
 * `guideline_service.py`: Generates competition guidelines using external AI services (e.g., Tavily, Gemini).
-* `ai_services.py`: Interfaces with external AI providers.
 
 ### `core/`
 
