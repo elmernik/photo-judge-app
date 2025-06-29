@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Edit, Trash2, Plus, CheckCircle, ToggleLeft, ToggleRight, AlertTriangle, Info } from 'lucide-react';
+import { X, Edit, Trash2, Plus, CheckCircle, ToggleLeft, ToggleRight, AlertTriangle, Info, Sparkles  } from 'lucide-react';
 
 // Shared Components
 const ModalContainer = ({ children, title, onClose }) => (
@@ -61,22 +61,32 @@ const Card = ({ children, className = '' }) => (
 
 // Prompt Manager Components
 const PromptHint = ({ title, variables, outputFormat }) => (
-    <div className="mt-3 p-4 bg-blue-100/50 border border-blue-200/60 rounded-lg text-sm shadow-sm">
+    <div className="mt-4 p-5 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl shadow-sm">
         <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div>
-                <h4 className="font-semibold text-blue-800 mb-2">{title}</h4>
-                <div className="space-y-2 text-blue-700">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+                <Info className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+            </div>
+            <div className="flex-1">
+                <h4 className="font-bold text-indigo-900 mb-3">{title}</h4>
+                <div className="space-y-3 text-indigo-800">
                     <div>
-                        <p className="font-medium text-xs text-blue-600 uppercase tracking-wider mb-1">Required Variables</p>
+                        <p className="font-semibold text-xs text-indigo-700 uppercase tracking-wider mb-2">Required Variables</p>
                         <div className="flex flex-wrap gap-2">
-                            {variables.map(v => <code key={v} className="text-xs font-mono bg-blue-200/70 text-blue-900 px-1.5 py-0.5 rounded">{v}</code>)}
+                            {variables.map(v => (
+                                <code key={v} className="text-xs font-mono bg-indigo-200 text-indigo-900 px-2 py-1 rounded-md shadow-sm">
+                                    {v}
+                                </code>
+                            ))}
                         </div>
                     </div>
                     <div>
-                        <p className="font-medium text-xs text-blue-600 uppercase tracking-wider mb-1">Required Output</p>
-                         <div className="flex flex-wrap gap-2">
-                            {outputFormat.map(o => <code key={o} className="text-xs font-mono bg-blue-200/70 text-blue-900 px-1.5 py-0.5 rounded">{o}</code>)}
+                        <p className="font-semibold text-xs text-indigo-700 uppercase tracking-wider mb-2">Required Output</p>
+                        <div className="flex flex-wrap gap-2">
+                            {outputFormat.map(o => (
+                                <code key={o} className="text-xs font-mono bg-indigo-200 text-indigo-900 px-2 py-1 rounded-md shadow-sm">
+                                    {o}
+                                </code>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -89,18 +99,20 @@ const PromptCard = ({ prompt, onEdit, onDelete, onToggleEnabled }) => {
     const isEnabled = prompt.enabled;
 
     return (
-        <Card className={`${isEnabled ? 'ring-2 ring-green-500 bg-green-50' : ''}`}>
-            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+        <Card className={`${isEnabled ? 'ring-2 ring-green-400 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg' : 'hover:shadow-md'} transition-all duration-200`}>
+            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
                 <div className="flex-1 min-w-0">
                     {isEnabled && (
-                        <div className="flex items-center gap-2 text-green-700 mb-3">
-                            <CheckCircle className="w-4 h-4" />
-                            <span className="text-sm font-medium">Active Prompt</span>
+                        <div className="flex items-center gap-3 text-green-700 mb-4">
+                            <div className="p-1 bg-green-100 rounded-full">
+                                <CheckCircle className="w-4 h-4" />
+                            </div>
+                            <span className="text-sm font-bold">Active Prompt</span>
                         </div>
                     )}
-                    <p className="text-sm text-gray-600 mb-4">{prompt.description || "No description provided."}</p>
-                    <div className="bg-gray-50 rounded-lg p-4 border">
-                        <pre className="text-xs text-gray-700 font-mono max-h-32 overflow-y-auto whitespace-pre-wrap">
+                    <p className="text-gray-600 mb-4 leading-relaxed">{prompt.description || "No description provided."}</p>
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 shadow-inner">
+                        <pre className="text-xs text-gray-700 font-mono max-h-32 overflow-y-auto whitespace-pre-wrap leading-relaxed">
                             {prompt.template}
                         </pre>
                     </div>
@@ -109,24 +121,28 @@ const PromptCard = ({ prompt, onEdit, onDelete, onToggleEnabled }) => {
                     <button
                         onClick={() => onToggleEnabled(prompt)}
                         title={isEnabled ? "This prompt is active" : "Click to activate this prompt"}
-                        className="p-2 text-gray-400 hover:text-green-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-100 transition-colors"
+                        className="p-3 text-gray-400 hover:text-green-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl hover:bg-green-50 transition-all duration-200 group"
                         disabled={isEnabled}
                     >
-                        {isEnabled ? <ToggleRight className="w-5 h-5 text-green-600" /> : <ToggleLeft className="w-5 h-5" />}
+                        {isEnabled ? (
+                            <ToggleRight className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" />
+                        ) : (
+                            <ToggleLeft className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                        )}
                     </button>
                     <button 
                         onClick={() => onEdit(prompt)} 
-                        className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-100 transition-colors" 
+                        className="p-3 text-gray-400 hover:text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-200 group" 
                         title="Edit Prompt"
                     >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-5 h-5 group-hover:scale-110 transition-transform" />
                     </button>
                     <button 
                         onClick={() => onDelete(prompt)} 
-                        className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-gray-100 transition-colors" 
+                        className="p-3 text-gray-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-all duration-200 group" 
                         title="Delete Prompt"
                     >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
                     </button>
                 </div>
             </div>
@@ -147,14 +163,11 @@ const PROMPT_HINTS = {
   },
 };
 
-
 const PromptForm = ({ initialPrompt, onSave, onCancel }) => {
     const [prompt, setPrompt] = useState(
         initialPrompt || { type: 'EVALUATION_PROMPT', description: '', template: '', enabled: false }
     );
     const isEditing = !!initialPrompt;
-
-    // Get the hints for the currently selected prompt type
     const currentHint = PROMPT_HINTS[prompt.type];
 
     const handleSubmit = (e) => {
@@ -163,25 +176,28 @@ const PromptForm = ({ initialPrompt, onSave, onCancel }) => {
     };
     
     return (
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200 shadow-lg">
             <form onSubmit={handleSubmit} className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900">
-                    {isEditing ? 'Edit Prompt' : 'Create New Prompt'}
-                </h3>
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-indigo-600 rounded-full"></div>
+                    <h3 className="text-xl font-bold text-gray-900">
+                        {isEditing ? 'Edit Prompt' : 'Create New Prompt'}
+                    </h3>
+                </div>
                 
                 <FormField label="Prompt Type" required>
                     {isEditing ? (
                         <input 
                             type="text" 
                             value={prompt.type.replace(/_/g, ' ')} 
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed text-gray-500" 
+                            className="w-full p-4 border border-gray-300 rounded-xl bg-gray-100 cursor-not-allowed text-gray-500 shadow-sm" 
                             disabled 
                         />
                     ) : (
                         <select
                             value={prompt.type}
                             onChange={e => setPrompt({ ...prompt, type: e.target.value })}
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full p-4 border border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-sm transition-all"
                         >
                             <option value="EVALUATION_PROMPT">Evaluation Prompt</option>
                             <option value="REASONING_PROMPT">Reasoning Prompt</option>
@@ -192,10 +208,10 @@ const PromptForm = ({ initialPrompt, onSave, onCancel }) => {
                 <FormField label="Description">
                     <input
                         type="text"
-                        placeholder="e.g., A prompt for harsher judging"
+                        placeholder="e.g., A prompt for harsher judging criteria"
                         value={prompt.description || ''}
                         onChange={e => setPrompt({ ...prompt, description: e.target.value })}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white shadow-sm transition-all"
                     />
                 </FormField>
 
@@ -203,12 +219,11 @@ const PromptForm = ({ initialPrompt, onSave, onCancel }) => {
                     <textarea
                         value={prompt.template}
                         onChange={e => setPrompt({ ...prompt, template: e.target.value })}
-                        className="w-full p-3 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-4 border border-gray-300 rounded-xl font-mono text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white shadow-sm transition-all resize-none"
                         rows="8"
                         placeholder="Enter the prompt template here..."
                         required
                     />
-                    {/* --- HINT IS ADDED HERE --- */}
                     {currentHint && (
                         <PromptHint
                             title={currentHint.title}
@@ -218,24 +233,24 @@ const PromptForm = ({ initialPrompt, onSave, onCancel }) => {
                     )}
                 </FormField>
 
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
                     <input
                         type="checkbox"
                         id="enable_prompt"
                         checked={prompt.enabled}
                         onChange={e => setPrompt({ ...prompt, enabled: e.target.checked })}
-                        className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="mt-1 h-5 w-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
                     <label htmlFor="enable_prompt" className="text-sm text-gray-700">
-                        <span className="font-medium">Enable this prompt upon saving</span>
+                        <span className="font-semibold">Enable this prompt upon saving</span>
                         <span className="block text-xs text-gray-500 mt-1">
                             Note: This will disable any other active prompt of the same type.
                         </span>
                     </label>
                 </div>
 
-                <div className="flex gap-3 pt-4 border-t border-gray-200">
-                    <ActionButton type="submit">
+                <div className="flex gap-3 pt-6 border-t border-purple-200">
+                    <ActionButton type="submit" className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg">
                         {isEditing ? 'Save Changes' : 'Create Prompt'}
                     </ActionButton>
                     <ActionButton variant="secondary" type="button" onClick={onCancel}>
@@ -343,33 +358,51 @@ const PromptManager = ({ prompts, setPrompts, closeModal, API_BASE_URL }) => {
                 
                 {view === 'list' && (
                     <div className="flex justify-end mb-6">
-                        <ActionButton onClick={showCreateForm} className="flex items-center gap-2">
-                            <Plus className="w-4 h-4" />
-                            Add New Prompt
-                        </ActionButton>
+                        <button 
+                            onClick={showCreateForm}
+                            className="group relative overflow-hidden bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center gap-3"
+                        >
+                            <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                            <Plus className="w-5 h-5" />
+                            <span>Add New Prompt</span>
+                        </button>
                     </div>
                 )}
                 
                 {view === 'list' ? (
                     <div className="space-y-8">
-                        {Object.entries(groupedPrompts).map(([type, promptList]) => (
-                            <section key={type}>
-                                <h3 className="text-lg font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-200 uppercase tracking-wide">
-                                    {type.replace(/_/g, ' ')}
-                                </h3>
-                                <div className="space-y-4">
-                                    {promptList.map(p => (
-                                        <PromptCard 
-                                            key={p.id} 
-                                            prompt={p}
-                                            onEdit={showEditForm}
-                                            onDelete={handleDelete}
-                                            onToggleEnabled={handleToggleEnabled}
-                                        />
-                                    ))}
+                        {Object.keys(groupedPrompts).length > 0 ? (
+                            Object.entries(groupedPrompts).map(([type, promptList]) => (
+                                <section key={type}>
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                                        <h3 className="text-lg font-bold text-gray-800 uppercase tracking-wide">
+                                            {type.replace(/_/g, ' ')}
+                                        </h3>
+                                        <div className="flex-1 h-px bg-gradient-to-r from-purple-200 to-transparent"></div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {promptList.map(p => (
+                                            <PromptCard 
+                                                key={p.id} 
+                                                prompt={p}
+                                                onEdit={showEditForm}
+                                                onDelete={handleDelete}
+                                                onToggleEnabled={handleToggleEnabled}
+                                            />
+                                        ))}
+                                    </div>
+                                </section>
+                            ))
+                        ) : (
+                            <div className="text-center py-12 text-gray-500">
+                                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Plus className="w-8 h-8 text-purple-400"/>
                                 </div>
-                            </section>
-                        ))}
+                                <p className="text-lg font-medium mb-2">No prompts yet</p>
+                                <p className="text-sm">Create your first prompt to get started</p>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <PromptForm 
@@ -456,49 +489,60 @@ const CriteriaManager = ({ criteria, setCriteria, closeModal, API_BASE_URL }) =>
                 <ErrorAlert error={error} />
                 
                 {editingCriterion ? (
-                    <Card className="bg-blue-50 border-blue-200">
+                    <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200 shadow-lg">
                         <form onSubmit={handleSave} className="space-y-6">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                                {editingCriterion.id ? 'Edit Criterion' : 'Add New Criterion'}
-                            </h3>
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-1 h-8 bg-gradient-to-b from-emerald-500 to-teal-600 rounded-full"></div>
+                                <h3 className="text-xl font-bold text-gray-900">
+                                    {editingCriterion.id ? 'Edit Criterion' : 'Create New Criterion'}
+                                </h3>
+                            </div>
                             
-                            <FormField label="Name" required>
+                            <FormField label="Criterion Name" required>
                                 <input 
                                     type="text" 
                                     value={editingCriterion.name || ''} 
                                     onChange={e => setEditingCriterion({...editingCriterion, name: e.target.value})} 
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    placeholder="e.g., Creativity"
+                                    className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white shadow-sm transition-all" 
+                                    placeholder="e.g., Creativity, Technical Skill, Composition"
                                     required
                                 />
                             </FormField>
                             
-                            <FormField label="Description (Prompt)" required>
+                            <FormField label="Description & Judging Instructions" required>
                                 <textarea 
                                     value={editingCriterion.description || ''} 
                                     onChange={e => setEditingCriterion({...editingCriterion, description: e.target.value})} 
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    rows="4"
-                                    placeholder="Describe what this criterion evaluates..."
+                                    className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white shadow-sm transition-all resize-none" 
+                                    rows="5"
+                                    placeholder="Describe what this criterion evaluates and how it should be judged..."
                                     required
                                 />
                             </FormField>
                             
-                            <FormField label="Weight" required>
-                                <input 
-                                    type="number" 
-                                    step="0.1" 
-                                    min="0"
-                                    value={editingCriterion.weight || ''} 
-                                    onChange={e => setEditingCriterion({...editingCriterion, weight: parseFloat(e.target.value) || 0})} 
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    placeholder="1.0"
-                                    required
-                                />
+                            <FormField label="Weight Factor" required>
+                                <div className="relative">
+                                    <input 
+                                        type="number" 
+                                        step="0.1" 
+                                        min="0"
+                                        value={editingCriterion.weight || ''} 
+                                        onChange={e => setEditingCriterion({...editingCriterion, weight: parseFloat(e.target.value) || 0})} 
+                                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white shadow-sm transition-all" 
+                                        placeholder="1.0"
+                                        required
+                                    />
+                                    <div className="absolute inset-y-0 right-0 flex items-center pr-4">
+                                        <span className="text-sm text-gray-500">×</span>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-600 mt-2">
+                                    Higher weights give this criterion more influence on the final score
+                                </p>
                             </FormField>
                             
-                            <div className="flex gap-3 pt-4 border-t border-gray-200">
-                                <ActionButton type="submit">
+                            <div className="flex gap-3 pt-6 border-t border-emerald-200">
+                                <ActionButton type="submit" className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg">
                                     {editingCriterion.id ? 'Save Changes' : 'Create Criterion'}
                                 </ActionButton>
                                 <ActionButton variant="secondary" type="button" onClick={() => setEditingCriterion(null)}>
@@ -509,50 +553,67 @@ const CriteriaManager = ({ criteria, setCriteria, closeModal, API_BASE_URL }) =>
                     </Card>
                 ) : (
                     <div className="space-y-4">
-                        {criteria.map(c => (
-                            <Card key={c.id}>
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex items-start gap-4 flex-1 min-w-0">
-                                        <input 
-                                            type="checkbox" 
-                                            checked={c.enabled} 
-                                            onChange={() => handleToggle(c)} 
-                                            className="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                        />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <h4 className="font-semibold text-gray-900">{c.name}</h4>
-                                                <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
-                                                    Weight: {c.weight}
-                                                </span>
+                        {criteria.length > 0 ? (
+                            criteria.map(c => (
+                                <Card key={c.id} className="hover:shadow-md transition-shadow duration-200">
+                                    <div className="flex items-start justify-between gap-6">
+                                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                                            <div className="pt-1">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={c.enabled} 
+                                                    onChange={() => handleToggle(c)} 
+                                                    className="h-5 w-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 shadow-sm"
+                                                />
                                             </div>
-                                            <p className="text-sm text-gray-600">{c.description}</p>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                                                    <h4 className="font-bold text-lg text-gray-900 truncate">{c.name}</h4>
+                                                    <span className="bg-emerald-100 text-emerald-700 px-3 py-1 text-sm font-semibold rounded-full">
+                                                        Weight: {c.weight}×
+                                                    </span>
+                                                </div>
+                                                <p className="text-gray-600 leading-relaxed">{c.description}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            <button 
+                                                onClick={() => setEditingCriterion(c)} 
+                                                className="p-3 text-gray-400 hover:text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-200 group"
+                                                title="Edit criterion"
+                                            >
+                                                <Edit className="w-5 h-5 group-hover:scale-110 transition-transform"/>
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDelete(c.id)} 
+                                                className="p-3 text-gray-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-all duration-200 group"
+                                                title="Delete criterion"
+                                            >
+                                                <Trash2 className="w-5 h-5 group-hover:scale-110 transition-transform"/>
+                                            </button>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2 flex-shrink-0">
-                                        <button 
-                                            onClick={() => setEditingCriterion(c)} 
-                                            className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-100 transition-colors"
-                                        >
-                                            <Edit className="w-4 h-4"/>
-                                        </button>
-                                        <button 
-                                            onClick={() => handleDelete(c.id)} 
-                                            className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-gray-100 transition-colors"
-                                        >
-                                            <Trash2 className="w-4 h-4"/>
-                                        </button>
-                                    </div>
+                                </Card>
+                            ))
+                        ) : (
+                            <div className="text-center py-12 text-gray-500">
+                                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Plus className="w-8 h-8 text-emerald-400"/>
                                 </div>
-                            </Card>
-                        ))}
+                                <p className="text-lg font-medium mb-2">No judging criteria yet</p>
+                                <p className="text-sm">Create your first criterion to get started</p>
+                            </div>
+                        )}
                         
                         <button 
                             onClick={() => setEditingCriterion({ name: '', description: '', weight: 1.0, enabled: true })} 
-                            className="w-full flex items-center justify-center gap-3 py-6 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-colors text-gray-600 hover:text-blue-600"
+                            className="w-full flex items-center justify-center gap-4 py-8 border-2 border-dashed border-gray-300 rounded-2xl hover:border-emerald-400 hover:bg-gradient-to-br hover:from-emerald-50 hover:to-teal-50 transition-all duration-200 text-gray-600 hover:text-emerald-600 group"
                         >
-                            <Plus className="w-5 h-5"/>
-                            Add New Criterion
+                            <div className="p-2 bg-emerald-100 rounded-xl group-hover:bg-emerald-200 transition-colors">
+                                <Plus className="w-6 h-6 text-emerald-600"/>
+                            </div>
+                            <span className="text-lg font-semibold">Add New Criterion</span>
                         </button>
                     </div>
                 )}
@@ -565,6 +626,7 @@ const CriteriaManager = ({ criteria, setCriteria, closeModal, API_BASE_URL }) =>
 const CompetitionManager = ({ competitions, setCompetitions, closeModal, API_BASE_URL }) => {
     const [editingCompetition, setEditingCompetition] = useState(null);
     const [error, setError] = useState(null);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const api = {
         create: (data) => fetch(`${API_BASE_URL}/competitions/`, { 
@@ -578,6 +640,38 @@ const CompetitionManager = ({ competitions, setCompetitions, closeModal, API_BAS
             body: JSON.stringify(data) 
         }),
         delete: (id) => fetch(`${API_BASE_URL}/competitions/${id}`, { method: 'DELETE' }),
+        generateGuidelines: (competitionName) => fetch(`${API_BASE_URL}/competitions/generate-guidelines`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ competition_name: competitionName })
+        }),
+    };
+
+    const handleGenerateGuidelines = async () => {
+        if (!editingCompetition?.name) {
+            setError("Please enter a competition name first.");
+            return;
+        }
+        
+        setError(null);
+        setIsGenerating(true);
+
+        try {
+            const res = await api.generateGuidelines(editingCompetition.name);
+            
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || "Failed to generate guidelines.");
+            }
+
+            const data = await res.json();
+            setEditingCompetition(prev => ({ ...prev, rules: data.guidelines }));
+
+        } catch (e) {
+            setError(e.message);
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const handleSave = async (e) => {
@@ -625,19 +719,22 @@ const CompetitionManager = ({ competitions, setCompetitions, closeModal, API_BAS
                 <ErrorAlert error={error} />
                 
                 {editingCompetition ? (
-                    <Card className="bg-blue-50 border-blue-200">
+                    <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-lg">
                         <form onSubmit={handleSave} className="space-y-6">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                                {editingCompetition.id ? 'Edit Competition' : 'Add New Competition'}
-                            </h3>
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+                                <h3 className="text-xl font-bold text-gray-900">
+                                    {editingCompetition.id ? 'Edit Competition' : 'Create New Competition'}
+                                </h3>
+                            </div>
                             
-                            <FormField label="Name" required>
+                            <FormField label="Competition Name" required>
                                 <input 
                                     type="text" 
                                     value={editingCompetition.name || ''} 
                                     onChange={e => setEditingCompetition({...editingCompetition, name: e.target.value})} 
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    placeholder="e.g., Nature photographer of the year"
+                                    className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all" 
+                                    placeholder="e.g., Wildlife Photographer of the Year"
                                     required
                                 />
                             </FormField>
@@ -646,24 +743,59 @@ const CompetitionManager = ({ competitions, setCompetitions, closeModal, API_BAS
                                 <textarea 
                                     value={editingCompetition.description || ''} 
                                     onChange={e => setEditingCompetition({...editingCompetition, description: e.target.value})} 
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                    className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all resize-none" 
                                     rows="3"
-                                    placeholder="Brief description of the competition..."
+                                    placeholder="Brief description of the competition and its purpose..."
                                 />
                             </FormField>
                             
-                            <FormField label="Rules (LLM Instructions)">
-                                <textarea 
-                                    value={editingCompetition.rules || ''} 
-                                    onChange={e => setEditingCompetition({...editingCompetition, rules: e.target.value})} 
-                                    className="w-full p-3 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    rows="6"
-                                    placeholder="Enter the specific rules and instructions for the competition that will be passed to the LLM for the final evaluation..."
-                                />
+                            <FormField>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-sm font-semibold text-gray-800">Competition Rules & Guidelines</label>
+                                        <button
+                                            type="button"
+                                            onClick={handleGenerateGuidelines}
+                                            disabled={!editingCompetition.name || isGenerating}
+                                            className="group relative overflow-hidden bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-5 py-2.5 rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl disabled:shadow-none transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed flex items-center gap-2.5"
+                                        >
+                                            <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                                            {isGenerating ? (
+                                                <>
+                                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                    <span>Generating...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Sparkles className="w-4 h-4" />
+                                                    <span>Generate with AI</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="relative">
+                                        <textarea 
+                                            value={editingCompetition.rules || ''} 
+                                            onChange={e => setEditingCompetition({...editingCompetition, rules: e.target.value})} 
+                                            className="w-full p-4 border border-gray-300 rounded-xl font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all resize-none" 
+                                            rows="8"
+                                            placeholder="Define the judging criteria and rules for the AI judge, or use the AI generator above to create them automatically based on your competition name."
+                                        />
+                                        {isGenerating && (
+                                            <div className="absolute inset-0 bg-blue-50/80 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                                                <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-lg">
+                                                    <div className="w-5 h-5 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
+                                                    <span className="text-blue-700 font-medium">AI is crafting your guidelines...</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </FormField>
                             
-                            <div className="flex gap-3 pt-4 border-t border-gray-200">
-                                <ActionButton type="submit">
+                            <div className="flex gap-3 pt-6 border-t border-blue-200">
+                                <ActionButton type="submit" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg">
                                     {editingCompetition.id ? 'Save Changes' : 'Create Competition'}
                                 </ActionButton>
                                 <ActionButton variant="secondary" type="button" onClick={() => setEditingCompetition(null)}>
@@ -674,42 +806,61 @@ const CompetitionManager = ({ competitions, setCompetitions, closeModal, API_BAS
                     </Card>
                 ) : (
                     <div className="space-y-4">
-                        {competitions.map(c => (
-                            <Card key={c.id}>
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className="font-semibold text-gray-900 mb-2">{c.name}</h4>
-                                        {c.description && (
-                                            <p className="text-sm text-gray-600 mb-3">{c.description}</p>
-                                        )}
-                                        <div className="text-xs text-gray-500">
-                                            Created: {new Date(c.created_at).toLocaleDateString()}
+                        {competitions.length > 0 ? (
+                            competitions.map(c => (
+                                <Card key={c.id} className="hover:shadow-md transition-shadow duration-200">
+                                    <div className="flex items-start justify-between gap-6">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                                <h4 className="font-bold text-lg text-gray-900 truncate">{c.name}</h4>
+                                            </div>
+                                            {c.description && (
+                                                <p className="text-gray-600 mb-4 leading-relaxed">{c.description}</p>
+                                            )}
+                                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                                                <span className="bg-gray-100 px-2 py-1 rounded-full">
+                                                    Created: {new Date(c.created_at).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            <button 
+                                                onClick={() => setEditingCompetition({ ...c })} 
+                                                className="p-3 text-gray-400 hover:text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-200 group"
+                                                title="Edit competition"
+                                            >
+                                                <Edit className="w-5 h-5 group-hover:scale-110 transition-transform"/>
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDelete(c.id)} 
+                                                className="p-3 text-gray-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-all duration-200 group"
+                                                title="Delete competition"
+                                            >
+                                                <Trash2 className="w-5 h-5 group-hover:scale-110 transition-transform"/>
+                                            </button>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2 flex-shrink-0">
-                                        <button 
-                                            onClick={() => setEditingCompetition({ ...c })} 
-                                            className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-100 transition-colors"
-                                        >
-                                            <Edit className="w-4 h-4"/>
-                                        </button>
-                                        <button 
-                                            onClick={() => handleDelete(c.id)} 
-                                            className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-gray-100 transition-colors"
-                                        >
-                                            <Trash2 className="w-4 h-4"/>
-                                        </button>
-                                    </div>
+                                </Card>
+                            ))
+                        ) : (
+                            <div className="text-center py-12 text-gray-500">
+                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Plus className="w-8 h-8 text-gray-400"/>
                                 </div>
-                            </Card>
-                        ))}
+                                <p className="text-lg font-medium mb-2">No competitions yet</p>
+                                <p className="text-sm">Create your first competition to get started</p>
+                            </div>
+                        )}
                         
                         <button 
                             onClick={() => setEditingCompetition({ name: '', description: '', rules: '' })} 
-                            className="w-full flex items-center justify-center gap-3 py-6 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-colors text-gray-600 hover:text-blue-600"
+                            className="w-full flex items-center justify-center gap-4 py-8 border-2 border-dashed border-gray-300 rounded-2xl hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 text-gray-600 hover:text-blue-600 group"
                         >
-                            <Plus className="w-5 h-5"/>
-                            Add New Competition
+                            <div className="p-2 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors">
+                                <Plus className="w-6 h-6 text-blue-600"/>
+                            </div>
+                            <span className="text-lg font-semibold">Add New Competition</span>
                         </button>
                     </div>
                 )}
