@@ -6,7 +6,7 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
-from .. import models, schemas
+from ..db import models, schemas
 
 IMAGE_DIR = Path("uploaded_photos")
 
