@@ -88,7 +88,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-100 flex">
+    <div className="h-screen bg-gradient-to-br from-slate-50 to-indigo-100 flex overflow-hidden">
       <Sidebar
         competitions={competitions}
         selectedCompetition={selectedCompetition}
@@ -100,7 +100,7 @@ export default function App() {
         setIsCriteriaManagerOpen={setIsCriteriaManagerOpen}
       />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-y-auto">
         {/* Modals */}
         {isCriteriaManagerOpen && <CriteriaManager criteria={criteria} setCriteria={setCriteria} closeModal={() => setIsCriteriaManagerOpen(false)} API_BASE_URL={API_BASE_URL} />}
         {isCompetitionManagerOpen && <CompetitionManager competitions={competitions} setCompetitions={setCompetitions} closeModal={() => setIsCompetitionManagerOpen(false)} API_BASE_URL={API_BASE_URL} />}
