@@ -1,4 +1,4 @@
-# app/crud.py
+# app/crud/crud.py
 
 import os
 from pathlib import Path
@@ -6,7 +6,7 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
-from . import models, schemas
+from .. import models, schemas
 
 IMAGE_DIR = Path("uploaded_photos")
 
