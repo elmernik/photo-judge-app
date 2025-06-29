@@ -12,7 +12,8 @@ The frontend is a React + Vite application that provides a user interface for up
 
 ### Showcase
 
-<img width="1512" alt="image" src="https://github.com/user-attachments/assets/62ac5190-34fb-4083-9e12-dee4609a7c15" />
+<img width="1512" alt="image" src="https://github.com/user-attachments/assets/5fd25071-f4a8-4350-99ee-0250c2a29ea7" />
+
 
 ---
 
