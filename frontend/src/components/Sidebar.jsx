@@ -57,7 +57,7 @@ const Sidebar = ({
                             >
                                 <div className="flex items-center gap-3">
                                     <Trophy className={`w-5 h-5 flex-shrink-0 transition-colors ${
-                                        selectedCompetition?.id === competition.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'
+                                        selectedCompetition?.id === competition.id ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
                                     }`} />
                                     <div className="flex-1">
                                         <p className={`font-semibold transition-colors ${

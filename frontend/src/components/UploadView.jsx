@@ -104,7 +104,7 @@ const UploadView = ({ selectedCompetition, criteria, API_BASE_URL }) => {
               <div className="p-8">
                 <label className="group cursor-pointer block p-8 border-2 border-dashed border-slate-300 rounded-xl hover:bg-slate-50/70 transition-colors" onDrop={(e) => { e.preventDefault(); handleFileChange(e.dataTransfer.files) }} onDragOver={(e) => e.preventDefault()}>
                   <div className="text-center">
-                    <Upload className="w-12 h-12 mx-auto text-indigo-500 mb-4 transition-transform group-hover:scale-110"/>
+                    <Upload className="w-12 h-12 mx-auto text-blue-600 mb-4 transition-transform group-hover:scale-110"/>
                     <h3 className="text-xl font-semibold text-slate-800">Drop photos here or click to browse</h3>
                     <p className="text-slate-500 mt-1">For competition: <span className="font-medium text-slate-700">{selectedCompetition.name}</span></p>
                   </div>

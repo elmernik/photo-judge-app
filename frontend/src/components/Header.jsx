@@ -16,7 +16,7 @@ const Header = ({ selectedCompetition, view, onSetView, onMenuClick }) => {
                         <Menu className="w-6 h-6" />
                     </button>
                     {/* Let's make the icon a little smaller and sleeker */}
-                    <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-lg shadow-md">
+                    <div className="p-2.5 bg-blue-600 rounded-lg shadow-md">
                         <Camera className="w-6 h-6 text-white" />
                     </div>
                     <div>
