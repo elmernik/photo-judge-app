@@ -64,9 +64,6 @@ const HistoryView = ({ selectedCompetition, API_BASE_URL }) => {
 
   return (
     <div>
-      <h2 className="text-3xl font-bold tracking-tight text-slate-800 mb-8">
-        Judgement History for {selectedCompetition?.name}
-      </h2>
 
       {loading && (
         <div className="flex justify-center items-center h-64">
