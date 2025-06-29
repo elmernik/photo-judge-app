@@ -4,9 +4,7 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import UploadView from './components/UploadView';
 import HistoryView from './components/HistoryView';
-import CriteriaManager from './components/CriteriaManager';
-import CompetitionManager from './components/CompetitionManager';
-import PromptManager from './components/PromptManager';
+import { CompetitionManager, CriteriaManager, PromptManager } from './components/Modals';
 import { Trophy } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:8000';
