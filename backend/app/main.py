@@ -85,11 +85,13 @@ def startup_event():
             for c in default_criteria:
                 crud.create_criterion(db, c)
 
-        if not crud.get_prompt_by_name(db, "EVALUATION_PROMPT"):
+        # Default EVALUATION_PROMPT seeding
+        if not crud.get_prompts_by_type(db, "EVALUATION_PROMPT"):
             crud.create_prompt(
                 db,
                 schemas.PromptCreate(
-                    name="EVALUATION_PROMPT",
+                    type="EVALUATION_PROMPT",
+                    enabled=True,
                     template="""You are an expert photography judge. Evaluate this photograph for {criterion_name}.
 
                                 {criterion_description}
@@ -101,15 +103,17 @@ def startup_event():
                                 Format your response as:
                                 SCORE: [number]
                                 RATIONALE: [explanation]""",
-                                                    description="The prompt used for evaluating a single criterion."
-                                                )
-                                            )
+                    description="The default prompt used for evaluating a single criterion."
+                )
+            )
 
-        if not crud.get_prompt_by_name(db, "REASONING_PROMPT"):
+        # Default REASONING_PROMPT seeding
+        if not crud.get_prompts_by_type(db, "REASONING_PROMPT"):
             crud.create_prompt(
                 db,
                 schemas.PromptCreate(
-                    name="REASONING_PROMPT",
+                    type="REASONING_PROMPT",
+                    enabled=True,
                     template="""You are the head judge of a photography competition. You have received feedback from your panel of judges on a photograph. Your task is to synthesize this feedback into a final, coherent summary for the photographer.
 
                                 The photograph received an overall score of {overall_score}/10.
@@ -119,9 +123,9 @@ def startup_event():
                                 {feedback_summary}
 
                                 Based on all of this, please provide a final summary. Explain what is good about the photo, how it could be improved, and how well it fits the competition's specific rules. Address the photographer directly in a helpful and encouraging tone.""",
-                                                    description="The prompt for generating the final overall reasoning."
-                                                )
-                                            )
+                    description="The default prompt for generating the final overall reasoning."
+                )
+            )
     finally:
         db.close()
 
@@ -136,10 +140,14 @@ async def process_and_store_image(file: UploadFile, competition_id: int, db: Ses
     if not criteria:
         raise HTTPException(status_code=400, detail="No enabled judging criteria found")
 
-    eval_prompt = crud.get_prompt_by_name(db, "EVALUATION_PROMPT")
-    reasoning_prompt = crud.get_prompt_by_name(db, "REASONING_PROMPT")
-    if not eval_prompt or not reasoning_prompt:
-        raise HTTPException(status_code=500, detail="Core prompt templates not found")
+    # Fetch the currently *enabled* prompts by their type
+    eval_prompt = crud.get_enabled_prompt_by_type(db, "EVALUATION_PROMPT")
+    reasoning_prompt = crud.get_enabled_prompt_by_type(db, "REASONING_PROMPT")
+
+    if not eval_prompt:
+        raise HTTPException(status_code=500, detail="No enabled EVALUATION_PROMPT found. Please enable one in the settings.")
+    if not reasoning_prompt:
+        raise HTTPException(status_code=500, detail="No enabled REASONING_PROMPT found. Please enable one in the settings.")
 
     judging_criteria = [
         JudgingCriterion(name=c.name, description=c.description, weight=c.weight)
@@ -264,15 +272,32 @@ def delete_competition(competition_id: int, db: Session = Depends(get_db)):
 # --- Prompt Management ---
 @app.get("/prompts/", response_model=List[schemas.Prompt], tags=["Management"])
 def read_prompts(db: Session = Depends(get_db)):
+    """Get a list of all available prompts."""
     return crud.get_prompts(db)
+
+
+@app.post("/prompts/", response_model=schemas.Prompt, tags=["Management"])
+def create_prompt(prompt: schemas.PromptCreate, db: Session = Depends(get_db)):
+    """Create a new prompt. If 'enabled' is true, any other prompts of the same type will be disabled."""
+    return crud.create_prompt(db=db, prompt=prompt)
 
 
 @app.put("/prompts/{prompt_id}", response_model=schemas.Prompt, tags=["Management"])
 def update_prompt(prompt_id: int, prompt: schemas.PromptUpdate, db: Session = Depends(get_db)):
+    """Update an existing prompt. If 'enabled' is true, any other prompts of the same type will be disabled."""
     updated = crud.update_prompt(db, prompt_id, prompt)
     if not updated:
         raise HTTPException(status_code=404, detail="Prompt not found")
     return updated
+
+
+@app.delete("/prompts/{prompt_id}", tags=["Management"])
+def delete_prompt(prompt_id: int, db: Session = Depends(get_db)):
+    """Delete a prompt by its ID."""
+    deleted_prompt = crud.delete_prompt(db, prompt_id)
+    if not deleted_prompt:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+    return JSONResponse(content={"message": f"Prompt {prompt_id} deleted successfully."})
 
 
 # --- Criteria Management ---

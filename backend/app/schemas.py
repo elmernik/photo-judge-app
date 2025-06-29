@@ -2,15 +2,22 @@
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from enum import Enum
 
 from pydantic import BaseModel
 
 
 # --- Prompt Schemas ---
+class PromptType(str, Enum):
+    EVALUATION_PROMPT = "EVALUATION_PROMPT"
+    REASONING_PROMPT = "REASONING_PROMPT"
+
+
 class PromptBase(BaseModel):
-    name: str
+    type: PromptType
     template: str
     description: Optional[str] = None
+    enabled: bool = True
 
 
 class PromptCreate(PromptBase):
@@ -18,8 +25,10 @@ class PromptCreate(PromptBase):
 
 
 class PromptUpdate(BaseModel):
+    type: Optional[PromptType] = None
     template: Optional[str] = None
     description: Optional[str] = None
+    enabled: Optional[bool] = None
 
 
 class Prompt(PromptBase):

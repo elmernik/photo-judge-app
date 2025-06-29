@@ -40,7 +40,8 @@ class Prompt(Base):
     __tablename__ = "prompts"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, unique=True, index=True)  # e.g., 'EVALUATION_PROMPT'
+    type = Column(String, nullable=False, index=True)  # e.g., 'EVALUATION_PROMPT' or 'REASONING_PROMPT'
+    enabled = Column(Boolean, default=True) # To enable/disable the prompt
     template = Column(Text, nullable=False)  # Contains placeholders like {criterion_name}
     description = Column(String)  # Optional description
 

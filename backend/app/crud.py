@@ -164,32 +164,71 @@ def delete_criterion(db: Session, criterion_id: int) -> models.Criterion:
 
 # --- Prompt CRUD ---
 
-def get_prompt_by_name(db: Session, name: str) -> models.Prompt:
-    """Retrieve a prompt by its unique name."""
-    return db.query(models.Prompt).filter(models.Prompt.name == name).first()
+def get_enabled_prompt_by_type(db: Session, prompt_type: schemas.PromptType) -> models.Prompt | None:
+    """Gets the single enabled prompt for a given type."""
+    return db.query(models.Prompt).filter(
+        models.Prompt.type == prompt_type,
+        models.Prompt.enabled == True
+    ).first()
+
+
+def get_prompts_by_type(db: Session, prompt_type: schemas.PromptType) -> List[models.Prompt]:
+    """Gets all prompts of a specific type, regardless of enabled status."""
+    return db.query(models.Prompt).filter(models.Prompt.type == prompt_type).all()
 
 
 def get_prompts(db: Session) -> List[models.Prompt]:
-    """Retrieve all prompts."""
+    "Gets all prompts."
     return db.query(models.Prompt).all()
 
 
 def create_prompt(db: Session, prompt: schemas.PromptCreate) -> models.Prompt:
-    """Create a new prompt."""
-    db_prompt = models.Prompt(**prompt.model_dump())
+    """
+    Creates a new prompt.
+    If the new prompt is enabled, it disables other prompts of the same type.
+    """
+    # If the new prompt is set to be enabled, disable others of the same type first.
+    if prompt.enabled:
+        db.query(models.Prompt).filter(
+            models.Prompt.type == prompt.type,
+            models.Prompt.enabled == True
+        ).update({"enabled": False})
+
+    db_prompt = models.Prompt(**prompt.dict())
     db.add(db_prompt)
     db.commit()
     db.refresh(db_prompt)
     return db_prompt
 
+def update_prompt(db: Session, prompt_id: int, prompt_data: schemas.PromptUpdate) -> models.Prompt | None:
+    "Updates a prompt and handles enabled status."
+    db_prompt = db.query(models.Prompt).filter(models.Prompt.id == prompt_id).first()
+    if not db_prompt:
+        return None
 
-def update_prompt(db: Session, prompt_id: int, prompt_update: schemas.PromptUpdate) -> models.Prompt:
-    """Update an existing prompt."""
+    # If this prompt is being enabled, disable others of the same type
+    if prompt_data.enabled:
+        prompt_type_to_update = db_prompt.type
+        if prompt_data.type:
+             prompt_type_to_update = prompt_data.type
+        
+        db.query(models.Prompt).filter(
+            models.Prompt.type == prompt_type_to_update,
+            models.Prompt.id != prompt_id
+        ).update({"enabled": False})
+
+    update_data = prompt_data.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_prompt, key, value)
+
+    db.commit()
+    db.refresh(db_prompt)
+    return db_prompt
+
+def delete_prompt(db: Session, prompt_id: int) -> models.Prompt | None:
+    """Deletes a prompt from the database by its ID."""
     db_prompt = db.query(models.Prompt).filter(models.Prompt.id == prompt_id).first()
     if db_prompt:
-        update_data = prompt_update.model_dump(exclude_unset=True)
-        for key, value in update_data.items():
-            setattr(db_prompt, key, value)
+        db.delete(db_prompt)
         db.commit()
-        db.refresh(db_prompt)
     return db_prompt
