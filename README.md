@@ -10,6 +10,10 @@ This application provides a system for helping photographers decide on photograp
 
 The frontend is a React + Vite application that provides a user interface for uploading photos and viewing the results.
 
+### AI-Assisted Judging Guidelines
+
+When creating a competition, AI can automatically generate judging guidelines. This feature uses the **Tavily** API to search the web for the competition name and past winners. A language model then synthesizes this information to produce context-specific judging criteria, which are used to evaluate photos submitted to that competition.
+
 ### Showcase
 
 <p align="center">
@@ -31,6 +35,7 @@ The frontend is a React + Vite application that provides a user interface for up
   * FastAPI
   * LangChain & LangGraph
   * Gemini (easily swappable with other model providers in LangChain)
+  * Tavily (web search integration)
   * SQLite
 * **Frontend:**
 
@@ -85,23 +90,26 @@ Before you begin, ensure you have the following installed:
      ```sh
      uv sync
      ```
+   * Create a `.env` file in the `backend` directory and add the following:
+
+     ```env
+     TAVILY_API_KEY=your_tavily_api_key_here
+     GOOGLE_API_KEY=your_gemini_api_key_here
+     ```
+
+     The `TAVILY_API_KEY` is required to enable automatic generation of judging guidelines during competition creation. The Tavily API searches for relevant information based on the competition name and prior winners, and a language model synthesizes this data into scoring criteria. 
 
 3. **Frontend Setup:**
 
    * Navigate to the `frontend` directory from the project root:
 
      ```sh
-     cd ../frontend # or cd frontend from root
+     cd ../frontend
      ```
    * Install the necessary npm packages:
 
      ```sh
      npm install
-     ```
-   * Create a `.env` file in the `frontend` directory. Add your Google Gemini API key to it:
-
-     ```env
-     GOOGLE_API_KEY=your_gemini_api_key_here
      ```
 
 ### ▶️ Running the Application
@@ -113,7 +121,7 @@ Before you begin, ensure you have the following installed:
    make dev
    ```
 
-This will start the application. Open your browser and navigate to `http://localhost:5173` to see it in action.
+This will start the application. Open your browser and navigate to `http://localhost:5173` to use it.
 
 ---
 
@@ -122,7 +130,7 @@ This will start the application. Open your browser and navigate to `http://local
 ### 🏆 Competitions
 
 * Judgements are organized by **competitions**, each with its own set of rules or descriptions for how entries should be evaluated.
-* You can **create** multiple competitions; each competition defines its own context and judging guidelines.
+* When creating a competition, the app can use AI to auto-generate evaluation criteria based on publicly available information, using Tavily for search and a language model for synthesis.
 
 ### ⚖️ Criteria
 
