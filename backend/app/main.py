@@ -5,16 +5,25 @@ import uuid
 import asyncio
 from pathlib import Path
 from typing import List
+import os
 
 import aiofiles
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_core.prompts import PromptTemplate
+from dotenv import load_dotenv
 
 from . import crud, models, schemas
 from .database import SessionLocal, engine
 from .graph import PhotoJudgeApp, JudgingCriterion
+from .schemas import GenerateGuidelinesRequest
+
+# --- Init API keys ---
+load_dotenv()
 
 # --- Initialize Database ---
 models.Base.metadata.create_all(bind=engine)
@@ -271,6 +280,72 @@ def delete_competition(competition_id: int, db: Session = Depends(get_db)):
     return JSONResponse(
         content={"message": f"Competition '{deleted.name}' and all its data deleted successfully."}
     )
+
+
+@app.post("/competitions/generate-guidelines", tags=["Management"])
+async def generate_ai_guidelines(request: GenerateGuidelinesRequest):
+    """
+    Generates competition guidelines by searching the web for past winners
+    and synthesizing the results with an AI model using Tavily Search.
+    """
+    competition_name = request.competition_name
+    if not competition_name:
+        raise HTTPException(status_code=400, detail="Competition name cannot be empty.")
+    
+    # Check if the API key is available
+    if not os.getenv("TAVILY_API_KEY"):
+        raise HTTPException(status_code=500, detail="TAVILY_API_KEY not found in environment variables.")
+
+    # Information Gathering: Perform the web search with Tavily
+    print(f"Searching with Tavily for: {competition_name}")
+    try:
+        # We can perform a single, more complex query. Tavily is good at this.
+        search_query = f'analysis of winning photos for "{competition_name}" competition. Themes, styles, subjects.'
+        
+        # Instantiate the search tool. You can specify max_results.
+        search_tool = TavilySearchResults(max_results=5)
+        
+        # Invoke the tool. It returns a list of dictionaries.
+        results = search_tool.invoke({"query": search_query})
+        
+        # Aggregate the content from the results
+        aggregated_results = "\n\n".join([res["content"] for res in results])
+
+        if not aggregated_results:
+             raise HTTPException(status_code=404, detail="No search results found for this competition.")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Web search failed: {e}")
+
+    # Information Synthesis: Use LLM to compile rules
+    print("Synthesizing guidelines from search results...")
+    synthesis_prompt_template = """
+    You are an expert photo competition analyst. Your task is to analyze the provided text, which contains information about past winners of the '{competition_name}' photography competition.
+    Based *only* on the text provided, identify the recurring themes, subjects, artistic styles, compositional techniques, and overall mood that seem to be favored by the judges.
+    From your analysis, generate a concise and informative "Competition Rules" description of around 100-150 words that could be used to guide an AI judge.
+    The description should be written in a neutral, guiding tone. Do not invent rules or criteria that are not supported by the source text.
+    **Source Text:**
+    ---
+    {aggregated_search_results}
+    ---
+    **Generated Competition Rules:**
+    """
+
+    try:
+        llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite-preview-06-17", temperature=0.3)
+        prompt = PromptTemplate.from_template(synthesis_prompt_template)
+        chain = prompt | llm
+        
+        response = await chain.ainvoke({
+            "competition_name": competition_name,
+            "aggregated_search_results": aggregated_results
+        })
+        
+        generated_guidelines = response.content.strip()
+        return {"guidelines": generated_guidelines}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI synthesis failed: {e}")
 
 
 # --- Prompt Management ---

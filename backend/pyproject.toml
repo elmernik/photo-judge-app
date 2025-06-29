@@ -5,10 +5,12 @@ dependencies = [
     "aiofiles>=24.1.0",
     "dotenv>=0.9.9",
     "fastapi>=0.115.14",
+    "langchain-community>=0.3.26",
     "langchain-google-genai>=2.1.5",
     "langgraph>=0.5.0",
     "pillow>=11.2.1",
     "python-multipart>=0.0.20",
     "sqlalchemy>=2.0.41",
+    "tavily-python>=0.7.8",
     "uvicorn>=0.34.3",
 ]

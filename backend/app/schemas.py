@@ -89,6 +89,10 @@ class Competition(CompetitionBase):
         from_attributes = True
 
 
+class GenerateGuidelinesRequest(BaseModel):
+    competition_name: str
+
+
 # --- Judgement Schemas ---
 class JudgementBase(BaseModel):
     original_filename: str
