@@ -1,14 +1,12 @@
 # app/crud/crud.py
 
 import os
-from pathlib import Path
 from typing import List
 
 from sqlalchemy.orm import Session
 
 from ..db import models, schemas
-
-IMAGE_DIR = Path("uploaded_photos")
+from ..core.config import settings
 
 
 # --- Judgement CRUD ---
@@ -49,7 +47,7 @@ def delete_judgement(db: Session, judgement_id: int) -> models.Judgement:
     """Delete a judgement and its associated image file."""
     db_judgement = get_judgement(db, judgement_id=judgement_id)
     if db_judgement:
-        image_path = IMAGE_DIR / db_judgement.stored_filename
+        image_path = settings.IMAGE_DIR / db_judgement.stored_filename
         if os.path.exists(image_path):
             os.remove(image_path)
         db.delete(db_judgement)
@@ -88,7 +86,7 @@ def delete_competition(db: Session, competition_id: int) -> models.Competition:
 
         for judgement in judgements_to_delete:
             if judgement.stored_filename:
-                image_path = IMAGE_DIR / judgement.stored_filename
+                image_path = settings.IMAGE_DIR / judgement.stored_filename
                 if os.path.exists(image_path):
                     try:
                         os.remove(image_path)

@@ -1,16 +1,8 @@
 # app/api/routers/images.py
 
-import asyncio
-from typing import List
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import  FileResponse
 
-from fastapi import APIRouter, Depends, File, UploadFile, Form, HTTPException
-from sqlalchemy.orm import Session
-from fastapi.responses import JSONResponse, FileResponse
-
-from ...db import schemas
-from ...api import deps
-from ...services import judging_service
-from ...crud import crud
 from ...core.config import settings
 
 router = APIRouter()
