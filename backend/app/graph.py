@@ -140,17 +140,27 @@ class PhotoJudgeApp:
         photo_state = state["photo"]
         rules = state.get("competition_rules", "general photography principles")
         template = state["reasoning_prompt_template"]
+        image_data = photo_state["image_data"]
 
         feedback_summary = "\n".join(
             f"- {name} (Score: {photo_state['scores'][name]}): {rationale}"
             for name, rationale in photo_state['rationales'].items()
         )
 
-        prompt = ChatPromptTemplate.from_template(template)
+        prompt = ChatPromptTemplate.from_messages([
+            ("user", [
+                # The text part now uses the reasoning_prompt_template
+                {"type": "text", "text": template},
+                # The image part, passed as a variable
+                {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,{image_data}"}}
+            ])
+        ])
+
         prompt_variables = {
             "overall_score": photo_state["overall_score"],
             "rules": rules,
-            "feedback_summary": feedback_summary
+            "feedback_summary": feedback_summary,
+            "image_data": image_data
         }
 
         chain = prompt | self.llm
