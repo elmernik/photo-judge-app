@@ -139,6 +139,25 @@ def startup_event():
                                                     description="The default prompt for generating the final overall reasoning and a potentially revised final score."
                                                 )
                                             )
+        # Default RULES_SYNTHESIS_PROMPT seeding
+        if not crud.get_prompts_by_type(db, "RULES_SYNTHESIS_PROMPT"):
+            crud.create_prompt(
+                db,
+                schemas.PromptCreate(
+                    type="RULES_SYNTHESIS_PROMPT",
+                    enabled=True,
+                    template="""You are an expert photo competition analyst. Your task is to analyze the provided text, which contains information about past winners of the '{competition_name}' photography competition.
+                                Based *only* on the text provided, identify the recurring themes, subjects, artistic styles, compositional techniques, and overall mood that seem to be favored by the judges.
+                                From your analysis, generate a concise and informative "Competition Rules" description of around 100-150 words that could be used to guide an AI judge.
+                                The description should be written in a neutral, guiding tone. Do not invent rules or criteria that are not supported by the source text.
+                                **Source Text:**
+                                ---
+                                {aggregated_search_results}
+                                ---
+                                **Generated Competition Rules:**""",
+                                                    description="The default prompt for synthesizing competition guidelines from web search results."
+                                                )
+                                            )
     finally:
         db.close()
 
@@ -283,7 +302,7 @@ def delete_competition(competition_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/competitions/generate-guidelines", tags=["Management"])
-async def generate_ai_guidelines(request: GenerateGuidelinesRequest):
+async def generate_ai_guidelines(request: GenerateGuidelinesRequest, db: Session = Depends(get_db)):
     """
     Generates competition guidelines by searching the web for past winners
     and synthesizing the results with an AI model using Tavily Search.
@@ -295,6 +314,11 @@ async def generate_ai_guidelines(request: GenerateGuidelinesRequest):
     # Check if the API key is available
     if not os.getenv("TAVILY_API_KEY"):
         raise HTTPException(status_code=500, detail="TAVILY_API_KEY not found in environment variables.")
+    
+    # Fetch synthesis prompt from the db
+    synthesis_prompt = crud.get_enabled_prompt_by_type(db, "RULES_SYNTHESIS_PROMPT")
+    if not synthesis_prompt:
+        raise HTTPException(status_code=500, detail="No enabled RULES_SYNTHESIS_PROMPT found. Please enable one in the settings.")
 
     # Information Gathering: Perform the web search with Tavily
     print(f"Searching with Tavily for: {competition_name}")
@@ -317,23 +341,9 @@ async def generate_ai_guidelines(request: GenerateGuidelinesRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Web search failed: {e}")
 
-    # Information Synthesis: Use LLM to compile rules
-    print("Synthesizing guidelines from search results...")
-    synthesis_prompt_template = """
-    You are an expert photo competition analyst. Your task is to analyze the provided text, which contains information about past winners of the '{competition_name}' photography competition.
-    Based *only* on the text provided, identify the recurring themes, subjects, artistic styles, compositional techniques, and overall mood that seem to be favored by the judges.
-    From your analysis, generate a concise and informative "Competition Rules" description of around 100-150 words that could be used to guide an AI judge.
-    The description should be written in a neutral, guiding tone. Do not invent rules or criteria that are not supported by the source text.
-    **Source Text:**
-    ---
-    {aggregated_search_results}
-    ---
-    **Generated Competition Rules:**
-    """
-
     try:
         llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite-preview-06-17", temperature=0.3)
-        prompt = PromptTemplate.from_template(synthesis_prompt_template)
+        prompt = PromptTemplate.from_template(synthesis_prompt.template)
         chain = prompt | llm
         
         response = await chain.ainvoke({

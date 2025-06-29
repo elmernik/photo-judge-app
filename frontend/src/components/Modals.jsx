@@ -161,6 +161,11 @@ const PROMPT_HINTS = {
     variables: ["{overall_score}", "{rules}", "{feedback_summary}"],
     outputFormat: ["FINAL_SCORE: [score]", "RATIONALE: [summary]"],
   },
+  RULES_SYNTHESIS_PROMPT: {
+    title: "Rules Synthesis Prompt Requirements",
+    variables: ["{competition_name}", "{aggregated_search_results}"],
+    outputFormat: ["No Requirements (Natural Language)"],
+  },
 };
 
 const PromptForm = ({ initialPrompt, onSave, onCancel }) => {
@@ -201,6 +206,7 @@ const PromptForm = ({ initialPrompt, onSave, onCancel }) => {
                         >
                             <option value="EVALUATION_PROMPT">Evaluation Prompt</option>
                             <option value="REASONING_PROMPT">Reasoning Prompt</option>
+                            <option value="RULES_SYNTHESIS_PROMPT">Rules Synthesis Prompt</option>
                         </select>
                     )}
                 </FormField>

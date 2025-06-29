@@ -11,6 +11,7 @@ from pydantic import BaseModel
 class PromptType(str, Enum):
     EVALUATION_PROMPT = "EVALUATION_PROMPT"
     REASONING_PROMPT = "REASONING_PROMPT"
+    RULES_SYNTHESIS_PROMPT = "RULES_SYNTHESIS_PROMPT"
 
 
 class PromptBase(BaseModel):
