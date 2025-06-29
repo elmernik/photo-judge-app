@@ -17,8 +17,9 @@ When creating a competition, AI can automatically generate judging guidelines. T
 ### Showcase
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/082429d6-35f7-48d4-8348-286d531858ed" width="45%" />
-  <img src="https://github.com/user-attachments/assets/cc6c19db-5b0c-45c7-9c52-5ef123e3f865" width="45%" />
+  <img width="49%" alt="image" src="https://github.com/user-attachments/assets/b8f0d56d-631d-46e2-bfec-d84f74737422" />
+  <img width="49%" alt="image" src="https://github.com/user-attachments/assets/25fbfc11-1c93-4976-87b7-0ecc6707be8d" />
+
 </p>
 
 #### Note
