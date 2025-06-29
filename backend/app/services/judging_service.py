@@ -58,7 +58,7 @@ class PhotoJudgeApp:
     def __init__(self):
         """Initialize the photo judge app with a configured language model."""
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash-lite-preview-06-17", temperature=0.3
+            model=settings.GEMINI_MODEL_NAME, temperature=settings.MODEL_TEMPERATURE
         )
 
     def _build_workflow(self) -> StateGraph:

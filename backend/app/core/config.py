@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     TAVILY_API_KEY: str | None = os.getenv("TAVILY_API_KEY")
     GOOGLE_API_KEY: str | None = os.getenv("GOOGLE_API_KEY")
 
+    # Model spec
+    GEMINI_MODEL_NAME: str = "gemini-2.5-flash-lite-preview-06-17"
+    MODEL_TEMPERATURE: float = 0.1
+
     class Config:
         case_sensitive = True
         env_file = ".env"

@@ -29,7 +29,7 @@ async def generate_guidelines_from_search(competition_name: str, db: Session) ->
         raise HTTPException(status_code=500, detail=f"Web search failed: {e}")
 
     try:
-        llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite-preview-06-17", temperature=0.3)
+        llm = ChatGoogleGenerativeAI(model=settings.GEMINI_MODEL_NAME, temperature=settings.MODEL_TEMPERATURE)
         prompt = PromptTemplate.from_template(synthesis_prompt.template)
         chain = prompt | llm
         response = await chain.ainvoke({
